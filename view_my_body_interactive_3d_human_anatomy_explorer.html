@@ -1,0 +1,3066 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VIEW MY BODY | Interactive 3D Human Anatomy Educational Platform</title>
+
+  <!-- Google Fonts: Orbitron (Futuristic Display), Space Grotesk, Inter, Noto Sans Sinhala -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+Sinhala:wght@400;500;600;700&family=Orbitron:wght@500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- GSAP & ScrollTrigger -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+  <!-- Three.js & OrbitControls (r128) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            display: ['Orbitron', 'Space Grotesk', 'sans-serif'],
+            sans: ['Inter', 'Noto Sans Sinhala', 'sans-serif'],
+            sinhala: ['Noto Sans Sinhala', 'sans-serif'],
+          },
+          colors: {
+            obsidian: '#040814',
+            deepnavy: '#091229',
+            cyanGlow: '#00f0ff',
+            electricBlue: '#0066ff',
+            neonPurple: '#9d4edd',
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    /* ==========================================================================
+       MODULE 1: CUSTOM FUTURISTIC STYLES, GLASSMORPHISM & THEME TOKENS
+       ========================================================================== */
+    :root {
+      --bg-primary: #040814;
+      --bg-secondary: #081024;
+      --glass-bg: rgba(10, 20, 45, 0.68);
+      --glass-border: rgba(0, 240, 255, 0.22);
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --accent-cyan: #00f0ff;
+      --accent-blue: #0066ff;
+      --accent-purple: #9d4edd;
+      --card-shadow: 0 8px 32px rgba(0, 240, 255, 0.08);
+    }
+
+    html.light-theme {
+      --bg-primary: #f0f6fc;
+      --bg-secondary: #e2ecf8;
+      --glass-bg: rgba(255, 255, 255, 0.85);
+      --glass-border: rgba(0, 102, 255, 0.22);
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --accent-cyan: #0284c7;
+      --accent-blue: #1d4ed8;
+      --accent-purple: #7e22ce;
+      --card-shadow: 0 10px 30px rgba(2, 132, 199, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: 'Inter', 'Noto Sans Sinhala', sans-serif;
+      overflow-x: hidden;
+      transition: background-color 0.4s ease, color 0.4s ease;
+    }
+
+    /* Futuristic Grid Background */
+    .cyber-grid {
+      background-image:
+        linear-gradient(to right, rgba(0, 240, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(0, 240, 255, 0.05) 1px, transparent 1px);
+      background-size: 44px 44px;
+    }
+
+    /* Glassmorphism Surface */
+    .glass-card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--card-shadow);
+      transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .glass-card:hover {
+      border-color: rgba(0, 240, 255, 0.55);
+      box-shadow: 0 12px 36px rgba(0, 240, 255, 0.16);
+    }
+
+    /* Glowing Futuristic Buttons */
+    .btn-glow {
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .btn-glow::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+      transition: left 0.55s ease;
+    }
+
+    .btn-glow:hover::before {
+      left: 100%;
+    }
+
+    .btn-glow:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 24px rgba(0, 240, 255, 0.45);
+    }
+
+    .btn-glow:active {
+      transform: scale(0.97);
+    }
+
+    /* Text Gradient */
+    .text-gradient-bio {
+      background: linear-gradient(135deg, #00f0ff 0%, #3b82f6 50%, #9d4edd 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* Holographic Hero Scanner Animation */
+    @keyframes scanline {
+      0% { transform: translateY(-10%); opacity: 0.2; }
+      50% { opacity: 0.95; }
+      100% { transform: translateY(380px); opacity: 0.2; }
+    }
+
+    .holo-scanline {
+      animation: scanline 4.2s ease-in-out infinite alternate;
+    }
+
+    @keyframes pulseRing {
+      0% { transform: scale(0.94); opacity: 0.8; }
+      50% { transform: scale(1.04); opacity: 0.35; }
+      100% { transform: scale(0.94); opacity: 0.8; }
+    }
+
+    .pulse-ring {
+      animation: pulseRing 3.5s ease-in-out infinite;
+      transform-origin: center;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--bg-primary);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, #00f0ff, #9d4edd);
+      border-radius: 9999px;
+    }
+
+    /* 3D Canvas Container */
+    #three-canvas-wrapper {
+      position: relative;
+      width: 100%;
+      height: 640px;
+      border-radius: 1.25rem;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 45%, #0d1d42 0%, #040814 82%);
+    }
+
+    html.light-theme #three-canvas-wrapper {
+      background: radial-gradient(circle at 50% 45%, #dbeafe 0%, #bfdbfe 85%);
+    }
+
+    @media (max-width: 768px) {
+      #three-canvas-wrapper {
+        height: 480px;
+      }
+    }
+
+    /* Loading Screen */
+    #loading-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: #040814;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.65s ease, visibility 0.65s ease;
+    }
+
+    .dna-spinner {
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      border: 3px solid rgba(0, 240, 255, 0.15);
+      border-top-color: #00f0ff;
+      border-right-color: #9d4edd;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body class="cyber-grid selection:bg-cyan-400 selection:text-slate-950">
+
+  <!-- ==========================================================================
+       ANIMATED LOADING SCREEN
+       ========================================================================== -->
+  <div id="loading-screen">
+    <div class="relative flex items-center justify-center mb-6">
+      <div class="dna-spinner"></div>
+      <i data-lucide="activity" class="w-7 h-7 text-cyan-400 absolute animate-pulse"></i>
+    </div>
+    <h2 class="font-display text-2xl md:text-3xl font-bold tracking-widest text-white mb-2">
+      VIEW <span class="text-cyan-400">MY BODY</span>
+    </h2>
+    <p class="text-cyan-300/80 text-xs tracking-[0.25em] uppercase mb-5">Initializing 3D Bio-Telemetry Engine...</p>
+    <div class="w-64 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+      <div id="loader-bar" class="h-full bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 w-0 transition-all duration-300"></div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       BACKGROUND PARTICLE CANVAS
+       ========================================================================== -->
+  <canvas id="particle-canvas" class="fixed inset-0 pointer-events-none z-0 opacity-60"></canvas>
+
+  <!-- ==========================================================================
+       STICKY FUTURISTIC NAVIGATION BAR & BILINGUAL SEARCH
+       ========================================================================== -->
+  <header class="sticky top-0 z-40 glass-card border-x-0 border-t-0 rounded-none">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16 md:h-20 gap-3">
+        <!-- Brand Logo -->
+        <a href="#hero" class="flex items-center gap-2.5 shrink-0 group">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 via-blue-600 to-purple-600 p-0.5 shadow-lg shadow-cyan-500/25">
+            <div class="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
+              <i data-lucide="scan-face" class="w-5 h-5 text-cyan-400 group-hover:scale-110 transition-transform"></i>
+            </div>
+          </div>
+          <div>
+            <span class="font-display font-bold text-base sm:text-lg tracking-wider block leading-none">
+              VIEW <span class="text-cyan-400">MY BODY</span>
+            </span>
+            <span class="text-[10px] tracking-[0.2em] uppercase text-slate-400 hidden sm:block">3D Bio-Atlas</span>
+          </div>
+        </a>
+
+        <!-- Real-Time Bilingual Search Bar -->
+        <div class="relative flex-1 max-w-md">
+          <div class="relative flex items-center">
+            <i data-lucide="search" class="w-4 h-4 text-cyan-400 absolute left-3.5 pointer-events-none"></i>
+            <input
+              id="global-search-input"
+              type="text"
+              autocomplete="off"
+              placeholder="Search Heart, හදවත, Brain, මොළය..."
+              class="w-full pl-10 pr-9 py-2 text-sm rounded-xl bg-slate-900/70 dark:bg-slate-900/80 border border-cyan-500/30 focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-400/25 text-inherit placeholder-slate-400 transition-all"
+            />
+            <button id="clear-search-btn" class="hidden absolute right-2.5 text-slate-400 hover:text-cyan-400 p-1" aria-label="Clear search">
+              <i data-lucide="x" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+          <!-- Search Results Dropdown -->
+          <div id="search-results-dropdown" class="hidden absolute left-0 right-0 mt-2 glass-card rounded-xl max-h-80 overflow-y-auto z-50 divide-y divide-cyan-500/15 shadow-2xl"></div>
+        </div>
+
+        <!-- Desktop Navigation Links -->
+        <nav class="hidden xl:flex items-center gap-5 text-sm font-medium">
+          <a href="#explorer-3d" class="hover:text-cyan-400 transition-colors" data-i18n="nav_3d">3D Explorer</a>
+          <a href="#body-parts-section" class="hover:text-cyan-400 transition-colors" data-i18n="nav_parts">Body Parts</a>
+          <a href="#systems-section" class="hover:text-cyan-400 transition-colors" data-i18n="nav_systems">Systems</a>
+          <a href="#diseases-section" class="hover:text-cyan-400 transition-colors" data-i18n="nav_diseases">Diseases</a>
+          <a href="#quiz-section" class="hover:text-cyan-400 transition-colors" data-i18n="nav_quiz">Quiz</a>
+        </nav>
+
+        <!-- Action Controls: Language Switcher, Bookmarks, Theme Toggle -->
+        <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <!-- Language Switcher Pills -->
+          <div class="flex items-center bg-slate-900/70 border border-cyan-500/25 rounded-xl p-0.5 text-xs font-semibold">
+            <button onclick="setLanguage('en')" data-lang-btn="en" class="lang-btn px-2 py-1.5 rounded-lg transition-all bg-cyan-500 text-slate-950">EN</button>
+            <button onclick="setLanguage('si')" data-lang-btn="si" class="lang-btn px-2 py-1.5 rounded-lg transition-all text-slate-300 hover:text-white font-sinhala">සිං</button>
+            <button onclick="setLanguage('bi')" data-lang-btn="bi" class="lang-btn px-2 py-1.5 rounded-lg transition-all text-slate-300 hover:text-white hidden sm:inline-block">EN+සිං</button>
+          </div>
+
+          <!-- Bookmarks Button -->
+          <button id="open-bookmarks-btn" class="relative p-2.5 rounded-xl glass-card hover:border-cyan-400 text-cyan-400" title="Saved Body Parts">
+            <i data-lucide="bookmark" class="w-4 h-4"></i>
+            <span id="bookmark-count-badge" class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-purple-600 text-white text-[10px] font-bold flex items-center justify-center">0</span>
+          </button>
+
+          <!-- Dark / Light Mode Toggle -->
+          <button id="theme-toggle-btn" class="p-2.5 rounded-xl glass-card hover:border-cyan-400 text-cyan-400" title="Toggle Dark/Light Theme">
+            <i id="theme-icon-sun" data-lucide="sun" class="w-4 h-4 hidden"></i>
+            <i id="theme-icon-moon" data-lucide="moon" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==========================================================================
+       1. HERO SECTION WITH HOLOGRAPHIC HUMAN ILLUSTRATION
+       ========================================================================== -->
+  <section id="hero" class="relative z-10 pt-10 pb-16 md:pt-16 md:pb-24 overflow-hidden">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+        <!-- Left Content -->
+        <div class="lg:col-span-7 space-y-6 hero-animate">
+          <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full glass-card border-cyan-400/40 text-xs font-semibold tracking-wider uppercase text-cyan-400">
+            <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+            <span data-i18n="hero_badge">Next-Gen Interactive 3D Medical Atlas</span>
+          </div>
+
+          <h1 class="font-display text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.1]">
+            <span class="block" data-i18n="hero_title_1">EXPLORE THE</span>
+            <span class="text-gradient-bio block mt-1" data-i18n="hero_title_2">HUMAN BODY</span>
+          </h1>
+
+          <p class="text-lg sm:text-xl font-medium text-cyan-300/90" data-i18n="hero_subtitle">
+            Discover the Amazing Science Inside You.
+          </p>
+
+          <p class="text-sm sm:text-base text-slate-400 max-w-2xl leading-relaxed" data-i18n="hero_desc">
+            Rotate a real-time 3D anatomical human model in 360°, isolate 11 physiological systems, inspect 36 vital organs with bilingual Sinhala & English medical insights, and test your knowledge.
+          </p>
+
+          <!-- Two Animated CTA Buttons -->
+          <div class="flex flex-wrap items-center gap-4 pt-2">
+            <a href="#explorer-3d" class="btn-glow px-7 py-4 rounded-2xl bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-600 text-slate-950 font-display font-bold text-sm tracking-wider uppercase flex items-center gap-2.5 shadow-lg shadow-cyan-500/30">
+              <i data-lucide="box" class="w-5 h-5"></i>
+              <span data-i18n="cta_explore_3d">EXPLORE 3D BODY</span>
+            </a>
+
+            <a href="#systems-section" class="btn-glow px-7 py-4 rounded-2xl glass-card border-cyan-400/50 hover:bg-cyan-500/10 font-display font-bold text-sm tracking-wider uppercase flex items-center gap-2.5">
+              <i data-lucide="layers" class="w-5 h-5 text-purple-400"></i>
+              <span data-i18n="cta_discover_systems">DISCOVER BODY SYSTEMS</span>
+            </a>
+          </div>
+
+          <!-- Quick Telemetry Metrics -->
+          <div class="grid grid-cols-3 gap-3 sm:gap-5 pt-4 max-w-lg">
+            <div class="glass-card rounded-2xl p-3.5 text-center">
+              <div class="font-display text-xl sm:text-2xl font-bold text-cyan-400">36+</div>
+              <div class="text-xs text-slate-400 mt-0.5" data-i18n="stat_organs">3D Body Parts</div>
+            </div>
+            <div class="glass-card rounded-2xl p-3.5 text-center">
+              <div class="font-display text-xl sm:text-2xl font-bold text-purple-400">11</div>
+              <div class="text-xs text-slate-400 mt-0.5" data-i18n="stat_systems">Body Systems</div>
+            </div>
+            <div class="glass-card rounded-2xl p-3.5 text-center">
+              <div class="font-display text-xl sm:text-2xl font-bold text-blue-400">EN / සිං</div>
+              <div class="text-xs text-slate-400 mt-0.5" data-i18n="stat_bilingual">Bilingual Atlas</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Animated Holographic Human Body SVG Illustration -->
+        <div class="lg:col-span-5 flex justify-center relative hero-animate">
+          <div class="relative w-full max-w-sm glass-card rounded-3xl p-6 border-cyan-400/30 overflow-hidden">
+            <div class="flex items-center justify-between text-[11px] font-display text-cyan-400 mb-2">
+              <span>BIO-SCAN // LIVE</span>
+              <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> 98.6°F / 72 BPM</span>
+            </div>
+
+            <!-- Holographic Human SVG -->
+            <svg viewBox="0 0 300 420" class="w-full h-auto drop-shadow-[0_0_18px_rgba(0,240,255,0.4)]">
+              <defs>
+                <linearGradient id="holoBodyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#00f0ff" stop-opacity="0.85" />
+                  <stop offset="50%" stop-color="#0066ff" stop-opacity="0.6" />
+                  <stop offset="100%" stop-color="#9d4edd" stop-opacity="0.85" />
+                </linearGradient>
+                <radialGradient id="organGlow" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stop-color="#00f0ff" stop-opacity="1" />
+                  <stop offset="100%" stop-color="#00f0ff" stop-opacity="0" />
+                </radialGradient>
+              </defs>
+
+              <!-- Concentric Radar Rings -->
+              <circle cx="150" cy="210" r="135" fill="none" stroke="rgba(0,240,255,0.12)" stroke-width="1" stroke-dasharray="6 6" class="pulse-ring" />
+              <circle cx="150" cy="210" r="102" fill="none" stroke="rgba(157,78,221,0.18)" stroke-width="1" />
+
+              <!-- Stylized Futuristic Human Silhouette -->
+              <g fill="rgba(0,240,255,0.06)" stroke="url(#holoBodyGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <!-- Head & Neck -->
+                <ellipse cx="150" cy="48" rx="22" ry="27" />
+                <path d="M140 74 L140 90 L160 90 L160 74" />
+                <!-- Torso & Shoulders -->
+                <path d="M140 90 L102 102 C92 106 88 116 90 130 L96 205 L112 215 L114 235 L186 235 L188 215 L204 205 L210 130 C212 116 208 106 198 102 L160 90 Z" />
+                <!-- Left & Right Arms -->
+                <path d="M92 112 L72 175 L64 232 L76 235 L88 180 L100 132" />
+                <path d="M208 112 L228 175 L236 232 L224 235 L212 180 L200 132" />
+                <!-- Legs -->
+                <path d="M116 235 L112 315 L108 392 L126 392 L136 315 L146 245 L154 245 L164 315 L174 392 L192 392 L188 315 L184 235" />
+              </g>
+
+              <!-- Glowing Internal Nodes (Brain, Heart, Lungs, Stomach, Kidneys) -->
+              <circle cx="150" cy="42" r="11" fill="url(#organGlow)" class="animate-pulse" />
+              <circle cx="156" cy="134" r="12" fill="#f43f5e" opacity="0.85" class="animate-ping" style="animation-duration: 2.2s;" />
+              <circle cx="156" cy="134" r="7" fill="#fb7185" />
+              <ellipse cx="133" cy="132" rx="11" ry="18" fill="rgba(56,189,248,0.35)" stroke="#38bdf8" stroke-width="1.2" />
+              <ellipse cx="167" cy="132" rx="11" ry="18" fill="rgba(56,189,248,0.35)" stroke="#38bdf8" stroke-width="1.2" />
+              <path d="M144 166 Q162 162 164 178 Q154 190 140 182 Z" fill="rgba(168,85,247,0.45)" stroke="#c084fc" stroke-width="1.2" />
+
+              <!-- Callout Telemetry Lines -->
+              <g stroke="#00f0ff" stroke-width="1" opacity="0.8">
+                <line x1="162" y1="42" x2="225" y2="28" />
+                <circle cx="225" cy="28" r="2.5" fill="#00f0ff" />
+                <line x1="163" y1="134" x2="232" y2="122" />
+                <circle cx="232" cy="122" r="2.5" fill="#f43f5e" />
+                <line x1="140" y1="176" x2="72" y2="165" />
+                <circle cx="72" cy="165" r="2.5" fill="#c084fc" />
+              </g>
+              <text x="230" y="31" fill="#00f0ff" font-size="9" font-family="Orbitron">BRAIN</text>
+              <text x="237" y="125" fill="#fb7185" font-size="9" font-family="Orbitron">HEART</text>
+              <text x="25" y="168" fill="#c084fc" font-size="9" font-family="Orbitron">DIGESTIVE</text>
+
+              <!-- Animated Laser Scanline -->
+              <rect x="20" y="15" width="260" height="3" fill="url(#holoBodyGrad)" class="holo-scanline" />
+            </svg>
+
+            <!-- Fact of the Day Mini Ticker -->
+            <div class="mt-3 pt-3 border-t border-cyan-500/20 flex items-start gap-2.5">
+              <i data-lucide="sparkles" class="w-4 h-4 text-cyan-400 shrink-0 mt-0.5"></i>
+              <p id="hero-fact-ticker" class="text-xs text-slate-300 leading-relaxed"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       2. INTERACTIVE 3D HUMAN BODY EXPLORER (THREE.JS + ORBITCONTROLS + GSAP)
+       ========================================================================== -->
+  <section id="explorer-3d" class="relative z-10 py-14 md:py-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <!-- Section Header -->
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+        <div>
+          <span class="text-xs font-display tracking-[0.25em] uppercase text-cyan-400 block mb-1" data-i18n="sec_3d_tag">Interactive 3D Anatomy Lab</span>
+          <h2 class="font-display text-3xl sm:text-4xl font-bold" data-i18n="sec_3d_title">3D Human Body Explorer</h2>
+        </div>
+        <p class="text-sm text-slate-400 max-w-xl" data-i18n="sec_3d_hint">
+          Drag to rotate 360°, scroll to zoom, or click any glowing organ on the 3D model to inspect its bilingual medical profile.
+        </p>
+      </div>
+
+      <!-- Main 3-Column Interactive Studio -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+        <!-- LEFT PANEL: Body Systems Selector & Model Controls -->
+        <div class="lg:col-span-3 glass-card rounded-2xl p-4 space-y-5">
+          <!-- Male / Female Model Switcher -->
+          <div>
+            <label class="text-[11px] font-display uppercase tracking-wider text-cyan-400 block mb-2" data-i18n="lbl_model_gender">Anatomical Model</label>
+            <div class="grid grid-cols-2 gap-2 bg-slate-950/60 p-1 rounded-xl border border-cyan-500/20">
+              <button id="gender-male-btn" onclick="setBodyGender('male')" class="py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 bg-cyan-500 text-slate-950 transition-all">
+                <i data-lucide="user" class="w-3.5 h-3.5"></i>
+                <span data-i18n="male">Male</span>
+              </button>
+              <button id="gender-female-btn" onclick="setBodyGender('female')" class="py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 text-slate-300 hover:text-white transition-all">
+                <i data-lucide="user-check" class="w-3.5 h-3.5"></i>
+                <span data-i18n="female">Female</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Interactive Body Systems Navigation -->
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-[11px] font-display uppercase tracking-wider text-cyan-400" data-i18n="lbl_body_systems">Body Systems</span>
+              <span id="active-system-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 font-semibold">All</span>
+            </div>
+            <div id="system-selector-list" class="space-y-1.5 max-h-[390px] overflow-y-auto pr-1">
+              <!-- Populated dynamically via JS -->
+            </div>
+          </div>
+
+          <!-- X-Ray Shell Opacity Toggle -->
+          <div class="pt-2 border-t border-cyan-500/20">
+            <div class="flex items-center justify-between text-xs mb-1.5">
+              <span class="text-slate-300" data-i18n="lbl_shell_opacity">Skin Hologram Opacity</span>
+              <span id="shell-opacity-val" class="font-display text-cyan-400">24%</span>
+            </div>
+            <input id="shell-opacity-slider" type="range" min="0" max="75" value="24" class="w-full accent-cyan-400 cursor-pointer" />
+          </div>
+        </div>
+
+        <!-- CENTER PANEL: 3D Three.js Canvas & Camera Controls -->
+        <div class="lg:col-span-5 relative">
+          <div id="three-canvas-wrapper" class="glass-card border-cyan-400/35 shadow-2xl">
+            <!-- Three.js WebGL Canvas mounts here -->
+            <div id="three-mount" class="w-full h-full cursor-grab active:cursor-grabbing"></div>
+
+            <!-- Hover Tooltip Floating Badge -->
+            <div id="organ-hover-tooltip" class="hidden pointer-events-none absolute z-20 px-3.5 py-2 rounded-xl bg-slate-950/90 border border-cyan-400 text-white text-xs font-semibold shadow-lg shadow-cyan-500/30 backdrop-blur-md">
+              <div id="tooltip-title" class="text-cyan-400 font-bold"></div>
+              <div id="tooltip-sub" class="text-[11px] text-slate-300"></div>
+            </div>
+
+            <!-- Top-Left 3D HUD Status -->
+            <div class="absolute top-3 left-3 pointer-events-none flex flex-wrap gap-2">
+              <span class="px-3 py-1 rounded-full bg-slate-950/75 border border-cyan-500/30 text-[11px] font-display text-cyan-400 backdrop-blur-md">
+                360° INTERACTIVE MESH
+              </span>
+              <span id="hud-selected-organ" class="px-3 py-1 rounded-full bg-purple-950/80 border border-purple-400/40 text-[11px] font-semibold text-purple-200 backdrop-blur-md">
+                Heart • හදවත
+              </span>
+            </div>
+
+            <!-- Top-Right Auto-Rotate Toggle -->
+            <button id="auto-rotate-btn" onclick="toggleAutoRotate()" class="absolute top-3 right-3 px-3 py-1.5 rounded-xl bg-slate-950/80 border border-cyan-500/35 text-xs font-semibold text-cyan-300 hover:border-cyan-400 flex items-center gap-1.5 backdrop-blur-md transition-all">
+              <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+              <span data-i18n="btn_spin">Spin</span>
+            </button>
+
+            <!-- Bottom Camera View Presets Bar -->
+            <div class="absolute bottom-3 left-3 right-3 flex flex-wrap items-center justify-center gap-1.5 bg-slate-950/80 border border-cyan-500/30 p-1.5 rounded-2xl backdrop-blur-md">
+              <button onclick="setCameraView('front')" class="cam-btn px-2.5 py-1.5 rounded-xl text-xs font-semibold hover:bg-cyan-500/20 text-cyan-300 transition-colors" data-i18n="cam_front">Front</button>
+              <button onclick="setCameraView('back')" class="cam-btn px-2.5 py-1.5 rounded-xl text-xs font-semibold hover:bg-cyan-500/20 text-cyan-300 transition-colors" data-i18n="cam_back">Back</button>
+              <button onclick="setCameraView('left')" class="cam-btn px-2.5 py-1.5 rounded-xl text-xs font-semibold hover:bg-cyan-500/20 text-cyan-300 transition-colors" data-i18n="cam_left">Left</button>
+              <button onclick="setCameraView('right')" class="cam-btn px-2.5 py-1.5 rounded-xl text-xs font-semibold hover:bg-cyan-500/20 text-cyan-300 transition-colors" data-i18n="cam_right">Right</button>
+              <div class="h-4 w-px bg-cyan-500/25 mx-0.5"></div>
+              <button onclick="zoomCamera(-0.8)" class="p-1.5 rounded-xl hover:bg-cyan-500/20 text-cyan-300" title="Zoom In"><i data-lucide="zoom-in" class="w-4 h-4"></i></button>
+              <button onclick="zoomCamera(0.8)" class="p-1.5 rounded-xl hover:bg-cyan-500/20 text-cyan-300" title="Zoom Out"><i data-lucide="zoom-out" class="w-4 h-4"></i></button>
+              <button onclick="resetCameraView()" class="px-2.5 py-1.5 rounded-xl bg-cyan-500 text-slate-950 text-xs font-bold hover:bg-cyan-400 transition-colors flex items-center gap-1">
+                <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                <span data-i18n="cam_reset">Reset</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT PANEL: Animated Organ Information Drawer (All 10 Fields) -->
+        <div id="organ-detail-panel" class="lg:col-span-4 glass-card rounded-2xl p-5 border-cyan-400/35 max-h-[640px] overflow-y-auto space-y-4">
+          <!-- Populated dynamically when an organ is clicked/selected -->
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       3. EXPLORE HUMAN BODY PARTS LIBRARY (ALL 36 ORGANS & STRUCTURES)
+       ========================================================================== -->
+  <section id="body-parts-section" class="relative z-10 py-14 md:py-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+        <div>
+          <span class="text-xs font-display tracking-[0.25em] uppercase text-purple-400 block mb-1" data-i18n="sec_parts_tag">Comprehensive Anatomical Index</span>
+          <h2 class="font-display text-3xl sm:text-4xl font-bold" data-i18n="sec_parts_title">Explore Human Body Parts</h2>
+        </div>
+
+        <!-- Category Filter Tabs -->
+        <div id="category-filter-tabs" class="flex flex-wrap gap-2">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+
+      <!-- Body Parts Grid -->
+      <div id="body-parts-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <!-- Populated dynamically via JS -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       4. EXPLORE BODY SYSTEMS SECTION
+       ========================================================================== -->
+  <section id="systems-section" class="relative z-10 py-14 md:py-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center max-w-3xl mx-auto mb-12">
+        <span class="text-xs font-display tracking-[0.25em] uppercase text-cyan-400 block mb-1" data-i18n="sec_sys_tag">Physiological Networks</span>
+        <h2 class="font-display text-3xl sm:text-4xl font-bold mb-3" data-i18n="sec_sys_title">Explore Body Systems</h2>
+        <p class="text-sm text-slate-400" data-i18n="sec_sys_desc">
+          Select any physiological system below to highlight its organs directly inside the interactive 3D Human Body model.
+        </p>
+      </div>
+
+      <div id="systems-showcase-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <!-- Populated dynamically via JS -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       5. SYMPTOMS & DISEASES SECTION + MEDICAL DISCLAIMER
+       ========================================================================== -->
+  <section id="diseases-section" class="relative z-10 py-14 md:py-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
+        <div>
+          <span class="text-xs font-display tracking-[0.25em] uppercase text-rose-400 block mb-1" data-i18n="sec_dis_tag">Clinical Awareness Guide</span>
+          <h2 class="font-display text-3xl sm:text-4xl font-bold" data-i18n="sec_dis_title">Symptoms & Diseases</h2>
+        </div>
+        <p class="text-sm text-slate-400 max-w-xl" data-i18n="sec_dis_sub">
+          Understand common medical conditions, warning signs, prevention strategies, and inspect the affected organs in 3D.
+        </p>
+      </div>
+
+      <!-- Prominent Medical Disclaimer Banner -->
+      <div class="glass-card border-amber-400/40 bg-amber-500/10 rounded-2xl p-4 sm:p-5 mb-8 flex items-start gap-3.5">
+        <i data-lucide="shield-alert" class="w-6 h-6 text-amber-400 shrink-0 mt-0.5"></i>
+        <div class="text-xs sm:text-sm leading-relaxed">
+          <strong class="text-amber-300 font-display uppercase tracking-wider block mb-1" data-i18n="disclaimer_title">Medical Educational Disclaimer</strong>
+          <span class="text-slate-300" data-i18n="disclaimer_text">
+            VIEW MY BODY is created strictly for educational and informational purposes. It is NOT a substitute for professional medical advice, clinical diagnosis, or treatment. Always consult a qualified physician or healthcare provider regarding any medical condition or symptoms.
+          </span>
+        </div>
+      </div>
+
+      <!-- Diseases Cards Grid -->
+      <div id="diseases-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Populated dynamically via JS -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       6. INTERESTING FACTS, WHY LEARN ANATOMY & INTERACTIVE QUIZ
+       ========================================================================== -->
+  <section id="quiz-section" class="relative z-10 py-14 md:py-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
+
+      <!-- Interesting Human Body Facts & Anatomy Fact of the Day -->
+      <div>
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+          <div>
+            <span class="text-xs font-display tracking-[0.25em] uppercase text-cyan-400 block mb-1" data-i18n="sec_facts_tag">Bio-Science Marvels</span>
+            <h2 class="font-display text-3xl font-bold" data-i18n="sec_facts_title">Interesting Human Body Facts</h2>
+          </div>
+          <button onclick="rotateFactOfDay()" class="btn-glow px-4 py-2.5 rounded-xl glass-card border-cyan-400/40 text-xs font-semibold text-cyan-300 flex items-center gap-2 self-start">
+            <i data-lucide="shuffle" class="w-4 h-4"></i>
+            <span data-i18n="btn_new_fact">New Fact of the Day</span>
+          </button>
+        </div>
+
+        <!-- Featured Fact of the Day Banner -->
+        <div id="fact-of-day-card" class="glass-card border-purple-400/40 rounded-2xl p-6 mb-6 bg-gradient-to-r from-cyan-500/10 via-blue-600/10 to-purple-600/10">
+          <!-- Populated by JS -->
+        </div>
+
+        <div id="facts-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- Interactive Anatomy Quiz + Why Learn Human Anatomy -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <!-- Interactive Quiz Module (7 cols) -->
+        <div class="lg:col-span-7 glass-card rounded-3xl p-6 sm:p-8 border-cyan-400/35">
+          <div class="flex items-center justify-between gap-4 mb-6">
+            <div>
+              <span class="text-xs font-display uppercase tracking-widest text-cyan-400" data-i18n="quiz_tag">Interactive Assessment</span>
+              <h3 class="font-display text-2xl font-bold mt-0.5" data-i18n="quiz_title">Human Anatomy Quiz</h3>
+            </div>
+            <div class="text-right">
+              <div class="text-xs text-slate-400" data-i18n="quiz_score_lbl">Score</div>
+              <div id="quiz-score-display" class="font-display text-xl font-bold text-cyan-400">0 / 6</div>
+            </div>
+          </div>
+
+          <!-- Progress Bar -->
+          <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden mb-6">
+            <div id="quiz-progress-bar" class="h-full bg-gradient-to-r from-cyan-400 to-purple-500 transition-all duration-500" style="width: 16.6%;"></div>
+          </div>
+
+          <!-- Quiz Body -->
+          <div id="quiz-container" class="space-y-5">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <!-- Why Learn Human Anatomy & Educational Resources (5 cols) -->
+        <div class="lg:col-span-5 space-y-6">
+          <div class="glass-card rounded-3xl p-6">
+            <h3 class="font-display text-xl font-bold mb-4 flex items-center gap-2 text-cyan-400">
+              <i data-lucide="graduation-cap" class="w-5 h-5"></i>
+              <span data-i18n="why_learn_title">Why Learn Human Anatomy?</span>
+            </h3>
+            <ul id="why-learn-list" class="space-y-3 text-sm text-slate-300">
+              <!-- Populated by JS -->
+            </ul>
+          </div>
+
+          <div class="glass-card rounded-3xl p-6">
+            <h3 class="font-display text-xl font-bold mb-4 flex items-center gap-2 text-purple-400">
+              <i data-lucide="book-open" class="w-5 h-5"></i>
+              <span data-i18n="resources_title">Educational Resources</span>
+            </h3>
+            <div class="space-y-3 text-sm">
+              <a href="#explorer-3d" class="block p-3 rounded-xl bg-slate-900/50 border border-cyan-500/20 hover:border-cyan-400 transition-all">
+                <div class="font-semibold text-cyan-300">3D Spatial Organ Mapping</div>
+                <div class="text-xs text-slate-400 mt-0.5">Interactive anatomical planes, anterior/posterior views & organ telemetry.</div>
+              </a>
+              <a href="#diseases-section" class="block p-3 rounded-xl bg-slate-900/50 border border-cyan-500/20 hover:border-cyan-400 transition-all">
+                <div class="font-semibold text-purple-300">Preventive Health & Early Symptoms Guide</div>
+                <div class="text-xs text-slate-400 mt-0.5">Bilingual Sinhala-English guide to recognizing common clinical warning signs.</div>
+              </a>
+              <a href="#body-parts-section" class="block p-3 rounded-xl bg-slate-900/50 border border-cyan-500/20 hover:border-cyan-400 transition-all">
+                <div class="font-semibold text-blue-300">Bilingual Medical Glossary (EN / සිංහල)</div>
+                <div class="text-xs text-slate-400 mt-0.5">36 essential human organs and structures with Sinhala & English terminology.</div>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       7. FOOTER (ABOUT, CONTACT, DISCLAIMER)
+       ========================================================================== -->
+  <footer class="relative z-10 border-t border-cyan-500/20 glass-card rounded-none mt-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div>
+          <div class="flex items-center gap-2.5 mb-3">
+            <i data-lucide="scan-face" class="w-6 h-6 text-cyan-400"></i>
+            <span class="font-display font-bold text-lg tracking-wider">VIEW <span class="text-cyan-400">MY BODY</span></span>
+          </div>
+          <p class="text-xs sm:text-sm text-slate-400 leading-relaxed" data-i18n="footer_about">
+            An interactive 3D Human Anatomy & Medical Science Educational Platform designed to make human biology accessible in both English and Sinhala.
+          </p>
+        </div>
+
+        <div>
+          <h4 class="font-display text-sm font-bold uppercase tracking-wider text-cyan-400 mb-3" data-i18n="footer_nav">Quick Navigation</h4>
+          <ul class="space-y-2 text-xs sm:text-sm text-slate-400">
+            <li><a href="#explorer-3d" class="hover:text-cyan-400 transition-colors">3D Human Body Explorer</a></li>
+            <li><a href="#body-parts-section" class="hover:text-cyan-400 transition-colors">Human Body Parts Library (36 Organs)</a></li>
+            <li><a href="#systems-section" class="hover:text-cyan-400 transition-colors">11 Physiological Body Systems</a></li>
+            <li><a href="#diseases-section" class="hover:text-cyan-400 transition-colors">Symptoms & Diseases Reference</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 class="font-display text-sm font-bold uppercase tracking-wider text-purple-400 mb-3" data-i18n="footer_contact">Contact & Disclaimer</h4>
+          <p class="text-xs text-slate-400 leading-relaxed mb-3">
+            Educational Inquiries: <span class="text-cyan-300">education@viewmybody.science</span><br />
+            Colombo, Sri Lanka • Bilingual STEM Initiative
+          </p>
+          <p class="text-[11px] text-amber-300/80 leading-relaxed">
+            Disclaimer: Educational tool only. Not intended for medical diagnosis or clinical decision-making.
+          </p>
+        </div>
+      </div>
+
+      <div class="border-t border-cyan-500/15 mt-8 pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2">
+        <span>© 2026 VIEW MY BODY. All Rights Reserved.</span>
+        <span>Built with Three.js, GSAP & Bilingual Medical Data (English / සිංහල)</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ==========================================================================
+       BOOKMARKS SLIDE-OVER MODAL & BACK-TO-TOP BUTTON
+       ========================================================================== -->
+  <div id="bookmarks-modal" class="hidden fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="glass-card rounded-3xl max-w-lg w-full p-6 border-cyan-400/40 space-y-4">
+      <div class="flex items-center justify-between border-b border-cyan-500/20 pb-3">
+        <h3 class="font-display text-lg font-bold text-cyan-400 flex items-center gap-2">
+          <i data-lucide="bookmark" class="w-5 h-5"></i>
+          <span data-i18n="bookmarks_title">Bookmarked Body Parts</span>
+        </h3>
+        <button id="close-bookmarks-btn" class="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div id="bookmarks-list" class="space-y-2.5 max-h-80 overflow-y-auto">
+        <!-- Populated dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Back to Top Animated Button -->
+  <button id="back-to-top-btn" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" class="fixed bottom-6 right-6 z-40 p-3.5 rounded-2xl bg-gradient-to-r from-cyan-400 to-blue-600 text-slate-950 shadow-lg shadow-cyan-500/35 opacity-0 pointer-events-none transition-all duration-300 hover:scale-110" aria-label="Back to top">
+    <i data-lucide="arrow-up" class="w-5 h-5"></i>
+  </button>
+
+  <!-- ==========================================================================
+       JAVASCRIPT MODULES:
+       1. translations.js (Bilingual EN / SI / BI strings)
+       2. anatomy.js (Complete 36 Body Parts + 11 Systems + 11 Diseases + Quiz)
+       3. three-engine.js (3D Human Body Model, Raycasting, OrbitControls, Camera)
+       4. animations.js & app.js (GSAP, Particles, Search, Bookmarks, UI Logic)
+       ========================================================================== -->
+  <script>
+    /* ==========================================================================
+       MODULE 2: TRANSLATIONS & BILINGUAL UI DICTIONARY (translations.js)
+       ========================================================================== */
+    const I18N = {
+      en: {
+        nav_3d: "3D Explorer",
+        nav_parts: "Body Parts",
+        nav_systems: "Systems",
+        nav_diseases: "Diseases",
+        nav_quiz: "Quiz",
+        hero_badge: "Next-Gen Interactive 3D Medical Atlas",
+        hero_title_1: "EXPLORE THE",
+        hero_title_2: "HUMAN BODY",
+        hero_subtitle: "Discover the Amazing Science Inside You.",
+        hero_desc: "Rotate a real-time 3D anatomical human model in 360°, isolate 11 physiological systems, inspect 36 vital organs with bilingual Sinhala & English medical insights, and test your knowledge.",
+        cta_explore_3d: "EXPLORE 3D BODY",
+        cta_discover_systems: "DISCOVER BODY SYSTEMS",
+        stat_organs: "3D Body Parts",
+        stat_systems: "Body Systems",
+        stat_bilingual: "Bilingual Atlas",
+        sec_3d_tag: "Interactive 3D Anatomy Lab",
+        sec_3d_title: "3D Human Body Explorer",
+        sec_3d_hint: "Drag to rotate 360°, scroll to zoom, or click any glowing organ on the 3D model to inspect its bilingual medical profile.",
+        lbl_model_gender: "Anatomical Model",
+        male: "Male",
+        female: "Female",
+        lbl_body_systems: "Body Systems",
+        lbl_shell_opacity: "Skin Hologram Opacity",
+        btn_spin: "Spin",
+        cam_front: "Front",
+        cam_back: "Back",
+        cam_left: "Left",
+        cam_right: "Right",
+        cam_reset: "Reset",
+        sec_parts_tag: "Comprehensive Anatomical Index",
+        sec_parts_title: "Explore Human Body Parts",
+        sec_sys_tag: "Physiological Networks",
+        sec_sys_title: "Explore Body Systems",
+        sec_sys_desc: "Select any physiological system below to highlight its organs directly inside the interactive 3D Human Body model.",
+        sec_dis_tag: "Clinical Awareness Guide",
+        sec_dis_title: "Symptoms & Diseases",
+        sec_dis_sub: "Understand common medical conditions, warning signs, prevention strategies, and inspect the affected organs in 3D.",
+        disclaimer_title: "Medical Educational Disclaimer",
+        disclaimer_text: "VIEW MY BODY is created strictly for educational and informational purposes. It is NOT a substitute for professional medical advice, clinical diagnosis, or treatment. Always consult a qualified physician or healthcare provider regarding any medical condition or symptoms.",
+        sec_facts_tag: "Bio-Science Marvels",
+        sec_facts_title: "Interesting Human Body Facts",
+        btn_new_fact: "New Fact of the Day",
+        quiz_tag: "Interactive Assessment",
+        quiz_title: "Human Anatomy Quiz",
+        quiz_score_lbl: "Score",
+        why_learn_title: "Why Learn Human Anatomy?",
+        resources_title: "Educational Resources",
+        footer_about: "An interactive 3D Human Anatomy & Medical Science Educational Platform designed to make human biology accessible in both English and Sinhala.",
+        footer_nav: "Quick Navigation",
+        footer_contact: "Contact & Disclaimer",
+        bookmarks_title: "Bookmarked Body Parts",
+        f_location: "Location in Body",
+        f_functions: "Main Functions",
+        f_how: "How It Works",
+        f_facts: "Interesting Facts",
+        f_symptoms: "Common Symptoms",
+        f_diseases: "Common Diseases & Disorders",
+        f_prevention: "Prevention & Healthy Tips",
+        view_in_3d: "Inspect in 3D",
+      },
+      si: {
+        nav_3d: "3D ගවේෂකය",
+        nav_parts: "ශරීර අවයව",
+        nav_systems: "පද්ධති",
+        nav_diseases: "රෝග සහ ලක්ෂණ",
+        nav_quiz: "ප්‍රශ්නාවලිය",
+        hero_badge: "නවීන අන්තර්ක්‍රියාකාරී 3D වෛද්‍ය සිතියම",
+        hero_title_1: "මිනිස් සිරුර",
+        hero_title_2: "ගවේෂණය කරන්න",
+        hero_subtitle: "ඔබ තුළ ඇති විශ්මිත විද්‍යාව සොයා ගන්න.",
+        hero_desc: "අංශක 360ක් කරකැවිය හැකි 3D මිනිස් සිරුර හරහා ශරීර පද්ධති 11ක් සහ අවයව 36ක ක්‍රියාකාරීත්වය සිංහල සහ ඉංග්‍රීසි භාෂාවලින් ඉගෙන ගන්න.",
+        cta_explore_3d: "3D සිරුර ගවේෂණය කරන්න",
+        cta_discover_systems: "ශරීර පද්ධති බලන්න",
+        stat_organs: "3D ශරීර අවයව",
+        stat_systems: "ශරීර පද්ධති",
+        stat_bilingual: "ද්විභාෂා දැනුම",
+        sec_3d_tag: "අන්තර්ක්‍රියාකාරී 3D ව්‍යුහ විද්‍යාගාරය",
+        sec_3d_title: "3D මිනිස් සිරුරු ගවේෂකය",
+        sec_3d_hint: "360° කරකැවීමට අදින්න, විශාලනය කිරීමට scroll කරන්න, හෝ ඕනෑම අවයවයක් මත ක්ලික් කර විස්තර බලන්න.",
+        lbl_model_gender: "ආකෘතිය තෝරන්න",
+        male: "පුරුෂ",
+        female: "ස්ත්‍රී",
+        lbl_body_systems: "ශරීර පද්ධති",
+        lbl_shell_opacity: "සමේ විනිවිදභාවය",
+        btn_spin: "කරකවන්න",
+        cam_front: "ඉදිරිපස",
+        cam_back: "පසුපස",
+        cam_left: "වම",
+        cam_right: "දකුණ",
+        cam_reset: "මුල් පිහිටුම",
+        sec_parts_tag: "සම්පූර්ණ අවයව නාමාවලිය",
+        sec_parts_title: "මිනිස් ශරීර අවයව ගවේෂණය කරන්න",
+        sec_sys_tag: "භෞතවේදී පද්ධති",
+        sec_sys_title: "ශරීර පද්ධති ගවේෂණය කරන්න",
+        sec_sys_desc: "3D ආකෘතිය තුළ අදාළ අවයව ඉස්මතු කර බැලීමට පහත පද්ධතියක් තෝරන්න.",
+        sec_dis_tag: "සෞඛ්‍ය දැනුවත් කිරීම",
+        sec_dis_title: "රෝග ලක්ෂණ සහ රෝග",
+        sec_dis_sub: "බහුල රෝග තත්ත්වයන්, රෝග ලක්ෂණ, වැළැක්වීමේ ක්‍රම සහ බලපාන අවයව 3D මගින් හඳුනා ගන්න.",
+        disclaimer_title: "වෛද්‍ය අධ්‍යාපනික නිවේදනය",
+        disclaimer_text: "VIEW MY BODY අධ්‍යාපනික අරමුණු සඳහා පමණක් නිර්මාණය කර ඇත. මෙය වෘත්තීය වෛද්‍ය උපදෙස්, රෝග විනිශ්චය හෝ ප්‍රතිකාර සඳහා ආදේශකයක් නොවේ. ඕනෑම රෝග ලක්ෂණයක් සඳහා සුදුසුකම් ලත් වෛද්‍යවරයෙකු හමුවන්න.",
+        sec_facts_tag: "ජීව විද්‍යාත්මක විශ්මයන්",
+        sec_facts_title: "මිනිස් සිරුර පිළිබඳ රසවත් කරුණු",
+        btn_new_fact: "නව කරුණක් බලන්න",
+        quiz_tag: "දැනුම මැනීම",
+        quiz_title: "ව්‍යුහ විද්‍යා ප්‍රශ්නාවලිය",
+        quiz_score_lbl: "ලකුණු",
+        why_learn_title: "මිනිස් ව්‍යුහ විද්‍යාව ඉගෙන ගත යුත්තේ ඇයි?",
+        resources_title: "අධ්‍යාපනික සම්පත්",
+        footer_about: "සිංහල සහ ඉංග්‍රීසි භාෂාවලින් මිනිස් සිරුර පිළිබඳ විද්‍යාත්මක දැනුම ලබා දෙන අන්තර්ක්‍රියාකාරී 3D අධ්‍යාපනික වේදිකාවකි.",
+        footer_nav: "ඉක්මන් සබැඳි",
+        footer_contact: "සම්බන්ධ වීම සහ වගකීම් ප්‍රකාශය",
+        bookmarks_title: "සුරැකි ශරීර අවයව",
+        f_location: "ශරීරයේ පිහිටීම",
+        f_functions: "ප්‍රධාන කාර්යයන්",
+        f_how: "ක්‍රියා කරන ආකාරය",
+        f_facts: "රසවත් කරුණු",
+        f_symptoms: "පොදු රෝග ලක්ෂණ",
+        f_diseases: "බහුල රෝග සහ ආබාධ",
+        f_prevention: "වැළැක්වීම සහ සෞඛ්‍ය උපදෙස්",
+        view_in_3d: "3D තුළ බලන්න",
+      }
+    };
+
+    let currentLang = 'en'; // 'en' | 'si' | 'bi'
+
+    function t(key) {
+      if (currentLang === 'bi') {
+        const en = I18N.en[key] || '';
+        const si = I18N.si[key] || '';
+        return en === si ? en : `${en} / ${si}`;
+      }
+      return I18N[currentLang][key] || I18N.en[key] || key;
+    }
+
+    function biText(obj) {
+      if (!obj) return '';
+      if (typeof obj === 'string') return obj;
+      if (currentLang === 'en') return obj.en;
+      if (currentLang === 'si') return obj.si;
+      return `${obj.en} — ${obj.si}`;
+    }
+
+    /* ==========================================================================
+       MODULE 3: COMPREHENSIVE ANATOMY DATABASE (anatomy.js)
+       - 11 Physiological Body Systems
+       - 36 Detailed Organs & Structures with all 10 required fields (EN + SI)
+       - 11 Common Diseases with Clinical Profiles
+       - Bilingual Quiz & Facts
+       ========================================================================== */
+    const BODY_SYSTEMS = [
+      { id: 'all', icon: 'sparkles', color: '#00f0ff', en: 'Complete Human Body', si: 'සම්පූර්ණ මිනිස් සිරුර', descEn: 'All anatomical structures and physiological systems combined.', descSi: 'සියලුම ශරීර අවයව සහ පද්ධති එකට.' },
+      { id: 'skeletal', icon: 'bone', color: '#e2e8f0', en: 'Skeletal System', si: 'අස්ථි පද්ධතිය', descEn: '206 bones providing structural support, organ protection, and mineral storage.', descSi: 'ශරීරයට හැඩය, ආරක්ෂාව සහ ශක්තිය ලබා දෙන අස්ථි පද්ධතිය.' },
+      { id: 'muscular', icon: 'dumbbell', color: '#f97316', en: 'Muscular System', si: 'මාංශ පේශි පද්ධතිය', descEn: 'Over 600 muscles enabling movement, posture, and heat generation.', descSi: 'චලනය, ඉරියව් පවත්වා ගැනීම සහ ශරීර උෂ්ණත්වය පාලනය කරයි.' },
+      { id: 'nervous', icon: 'brain', color: '#c084fc', en: 'Nervous System', si: 'ස්නායු පද්ධතිය', descEn: 'Brain, spinal cord, and peripheral nerves transmitting rapid electrical signals.', descSi: 'මොළය, සුෂුම්නාව සහ ස්නායු මගින් ශරීරය පාලනය කරයි.' },
+      { id: 'circulatory', icon: 'heart-pulse', color: '#f43f5e', en: 'Circulatory System', si: 'රුධිර සංසරණ පද්ධතිය', descEn: 'Heart and blood vessels delivering oxygen and nutrients to every cell.', descSi: 'හදවත සහ රුධිර වාහිනී මගින් ඔක්සිජන් හා පෝෂ්‍ය පදාර්ථ බෙදා හරියි.' },
+      { id: 'respiratory', icon: 'wind', color: '#38bdf8', en: 'Respiratory System', si: 'ශ්වසන පද්ධතිය', descEn: 'Lungs and airways exchanging oxygen and carbon dioxide with the blood.', descSi: 'පෙනහළු සහ ශ්වසන මාර්ග මගින් ඔක්සිජන් ලබා ගෙන කාබන් ඩයොක්සයිඩ් පිට කරයි.' },
+      { id: 'digestive', icon: 'utensils', color: '#eab308', en: 'Digestive System', si: 'ආහාර ජීර්ණ පද්ධතිය', descEn: 'Breaks down food into absorbable nutrients and eliminates waste.', descSi: 'ආහාර ජීර්ණය කර ශරීරයට අවශ්‍ය පෝෂ්‍ය පදාර්ථ උරා ගනී.' },
+      { id: 'urinary', icon: 'droplets', color: '#14b8a6', en: 'Urinary System', si: 'මුත්‍රා පද්ධතිය', descEn: 'Filters blood waste, balances electrolytes, and regulates fluid volume.', descSi: 'රුධිරය පෙරා අපද්‍රව්‍ය මුත්‍රා ලෙස පිට කරයි.' },
+      { id: 'endocrine', icon: 'zap', color: '#a855f7', en: 'Endocrine System', si: 'අන්තරාසර්ග පද්ධතිය', descEn: 'Hormone-secreting glands regulating metabolism, growth, and mood.', descSi: 'හෝමෝන මගින් වර්ධනය සහ පරිවෘත්තීය ක්‍රියා පාලනය කරයි.' },
+      { id: 'reproductive', icon: 'dna', color: '#ec4899', en: 'Reproductive System', si: 'ප්‍රජනක පද්ධතිය', descEn: 'Organs responsible for human reproduction and sex hormone production.', descSi: 'නව පරපුරක් බිහි කිරීම සහ ප්‍රජනක හෝමෝන නිපදවීම සිදු කරයි.' },
+      { id: 'immune', icon: 'shield', color: '#22c55e', en: 'Immune System', si: 'ප්‍රතිශක්තිකරණ පද්ධතිය', descEn: 'Defends the body against bacteria, viruses, and abnormal cells.', descSi: 'විෂබීජ සහ රෝග කාරක වලින් ශරීරය ආරක්ෂා කරයි.' },
+    ];
+
+    // Helper to build comprehensive bilingual organ entries cleanly
+    const ORGANS_DATA = [
+      // ================= HEAD & BRAIN =================
+      {
+        id: 'brain', category: 'Head & Brain', system: 'nervous', color: '#c084fc', pos: [0, 1.56, 0],
+        en: 'Brain', si: 'මොළය',
+        location: { en: 'Inside the cranial cavity of the skull.', si: 'හිස්කබලේ කපාල කුහරය ඇතුළත පිහිටා ඇත.' },
+        functions: { en: 'Controls thought, memory, emotion, motor skills, vision, breathing, and every body process.', si: 'සිතුවිලි, මතකය, හැඟීම්, චලනය, පෙනීම, හුස්ම ගැනීම සහ ශරීරයේ සියලුම ක්‍රියා පාලනය කරයි.' },
+        howItWorks: { en: 'Approximately 86 billion neurons communicate via rapid electrical impulses and chemical neurotransmitters.', si: 'නියුරෝන බිලියන 86ක් පමණ විද්‍යුත් සංඥා සහ රසායනික සම්ප්‍රේෂක හරහා තොරතුරු හුවමාරු කර ගනී.' },
+        facts: { en: 'Generates about 20 watts of electrical power and consumes 20% of the body’s oxygen.', si: 'වොට් 20ක පමණ විදුලි බලයක් නිපදවන අතර ශරීරයේ ඔක්සිජන් වලින් 20%ක් භාවිතා කරයි.' },
+        symptoms: { en: 'Severe headaches, dizziness, memory loss, blurred vision, numbness, confusion.', si: 'දැඩි හිසරදය, කරකැවිල්ල, මතකය අඩුවීම, පෙනීම බොඳවීම, හිරිවැටීම.' },
+        diseases: { en: 'Stroke, Migraine, Epilepsy, Alzheimer’s disease, Meningitis.', si: 'ආඝාතය (Stroke), ඉරුවාරදය (Migraine), අපස්මාරය, ඇල්සයිමර් රෝගය.' },
+        prevention: { en: 'Get 7–8 hours of sleep, stay hydrated, eat omega-3 rich foods, exercise, and wear helmets.', si: 'පැය 7-8ක් නිදාගන්න, ජලය පානය කරන්න, ඔමේගා-3 ආහාර ගන්න, හිස්වැසුම් පළඳින්න.' }
+      },
+      {
+        id: 'eyes', category: 'Head & Brain', system: 'nervous', color: '#38bdf8', pos: [0, 1.53, 0.11],
+        en: 'Eyes', si: 'ඇස්',
+        location: { en: 'Set within the protective bony orbits of the front skull.', si: 'හිස්කබලේ ඉදිරිපස අක්ෂි කුහර තුළ පිහිටා ඇත.' },
+        functions: { en: 'Capture light and convert visual patterns into nerve signals for sight.', si: 'ආලෝකය ලබාගෙන එය දෘශ්‍ය සංඥා බවට පත් කර මොළයට යවයි.' },
+        howItWorks: { en: 'Cornea and lens focus light onto the retina, where rods and cones send impulses via the optic nerve.', si: 'කාචය මගින් ආලෝකය දෘෂ්ටි විතානය මත නාභිගත කර දෘෂ්ටි ස්නායුව හරහා මොළයට යවයි.' },
+        facts: { en: 'The human eye can distinguish roughly 10 million different colors.', si: 'මිනිස් ඇසට වර්ණ මිලියන 10ක් පමණ වෙන්කර හඳුනාගත හැකිය.' },
+        symptoms: { en: 'Blurry vision, redness, eye strain, double vision, dryness, light sensitivity.', si: 'පෙනීම බොඳවීම, ඇස් රතුවීම, ඇස් වෙහෙස, වියළි බව, ආලෝකයට සංවේදී බව.' },
+        diseases: { en: 'Cataracts, Glaucoma, Myopia (nearsightedness), Conjunctivitis, Diabetic Retinopathy.', si: 'ඇසේ සුද (Cataracts), ග්ලුකෝමා, දුර/ළඟ පෙනීමේ දුර්වලතා.' },
+        prevention: { en: 'Follow the 20-20-20 screen rule, wear UV sunglasses, and eat Vitamin A-rich vegetables.', si: 'තිර දෙස බැලීමේදී 20-20-20 නීතිය අනුගමනය කරන්න, විටමින් A බහුල ආහාර ගන්න.' }
+      },
+      {
+        id: 'ears', category: 'Head & Brain', system: 'nervous', color: '#fbbf24', pos: [0.13, 1.52, 0],
+        en: 'Ears', si: 'කන්',
+        location: { en: 'On the left and right temporal sides of the head.', si: 'හිසේ දෙපස ශංඛක ප්‍රදේශයේ පිහිටා ඇත.' },
+        functions: { en: 'Detect sound waves for hearing and maintain physical balance (equilibrium).', si: 'ශබ්ද තරංග හඳුනා ගැනීම (ශ්‍රවණය) සහ ශරීරයේ සමතුලිතතාවය පවත්වා ගැනීම.' },
+        howItWorks: { en: 'Sound vibrates the eardrum and tiny ossicle bones, stimulating fluid hair cells in the cochlea.', si: 'ශබ්ද තරංග කන් බෙරය කම්පනය කර කර්ණ ශංඛය හරහා ශ්‍රවණ ස්නායුවට සංඥා යවයි.' },
+        facts: { en: 'Contains the stapes—the smallest bone in the human body, measuring just 3 mm.', si: 'ශරීරයේ කුඩාම අස්ථිය වන ධරණකය (Stapes - මි.මී. 3) කන තුළ පිහිටයි.' },
+        symptoms: { en: 'Earache, ringing (tinnitus), muffled hearing, vertigo, fluid discharge.', si: 'කන් කැක්කුම, කන් ඇසීම අඩුවීම, කන තුළ ශබ්ද ඇසීම, කරකැවිල්ල.' },
+        diseases: { en: 'Otitis Media (ear infection), Tinnitus, Vertigo, Noise-Induced Hearing Loss.', si: 'මැද කනේ ආසාදන, ශ්‍රවණාබාධ, කරකැවිල්ල (Vertigo).' },
+        prevention: { en: 'Avoid loud headphone volumes, keep ears dry, and never insert cotton swabs deep inside.', si: 'අධික ශබ්ද වලින් වළකින්න, කන් වියළිව තබා ගන්න, කන ඇතුළට කූරු දැමීමෙන් වළකින්න.' }
+      },
+      {
+        id: 'nose', category: 'Head & Brain', system: 'respiratory', color: '#38bdf8', pos: [0, 1.49, 0.13],
+        en: 'Nose', si: 'නාසය',
+        location: { en: 'Center of the face, superior to the mouth.', si: 'මුහුණේ මධ්‍යයේ මුඛයට ඉහළින් පිහිටා ඇත.' },
+        functions: { en: 'Warms, humidifies, and filters inhaled air while providing the sense of smell.', si: 'ආශ්වාස කරන වාතය පෙරීම, උණුසුම් කිරීම සහ ගඳ සුවඳ හඳුනා ගැනීම.' },
+        howItWorks: { en: 'Mucus and cilia trap dust/pathogens, while olfactory receptors transmit scent signals to the brain.', si: 'ශ්ලේෂ්මල සහ සියුම් රෝම මගින් දූවිලි පෙරා ගන්නා අතර ආඝ්‍රාණ ප්‍රතිග්‍රාහක සුවඳ හඳුනා ගනී.' },
+        facts: { en: 'The human nose can detect over 1 trillion distinct odors.', si: 'මිනිස් නාසයට විවිධ ගඳ සුවඳ වර්ග ට්‍රිලියනයකට වඩා හඳුනාගත හැකිය.' },
+        symptoms: { en: 'Nasal congestion, sneezing, nosebleeds, loss of smell, sinus pressure.', si: 'නාසය අවහිර වීම, කිවිසුම් යාම, නාසයෙන් ලේ ගැලීම, සුවඳ නොදැනීම.' },
+        diseases: { en: 'Allergic Rhinitis, Sinusitis, Deviated Septum, Nasal Polyps.', si: 'පීනස (Sinusitis), අසාත්මිකතා, නාසයේ මස් දළු.' },
+        prevention: { en: 'Avoid dust/allergens, use saline nasal rinses, and stay hydrated.', si: 'දූවිලි හා අසාත්මික කාරක වලින් වළකින්න, පිරිසිදු වාතය ආශ්වාස කරන්න.' }
+      },
+      {
+        id: 'mouth', category: 'Head & Brain', system: 'digestive', color: '#fb7185', pos: [0, 1.44, 0.12],
+        en: 'Mouth', si: 'මුඛය',
+        location: { en: 'Lower anterior portion of the face.', si: 'මුහුණේ පහළ ඉදිරිපස කොටසේ පිහිටා ඇත.' },
+        functions: { en: 'Initiates mechanical and chemical digestion, enables speech, and serves as a secondary airway.', si: 'ආහාර ජීර්ණය ආරම්භ කිරීම, කථනයට උපකාර කිරීම සහ හුස්ම ගැනීමට සහාය වීම.' },
+        howItWorks: { en: 'Teeth chew food while salivary glands release amylase enzymes to break down starches.', si: 'දත් මගින් ආහාර අඹරන අතර ඛේට ග්‍රන්ථි මගින් පිෂ්ඨය ජීර්ණය ආරම්භ කරයි.' },
+        facts: { en: 'Salivary glands produce 1 to 1.5 liters of saliva every single day.', si: 'ඛේට ග්‍රන්ථි මගින් දිනකට කෙළ ලීටර් 1ත් 1.5ත් අතර ප්‍රමාණයක් නිපදවයි.' },
+        symptoms: { en: 'Mouth ulcers, dry mouth, bleeding gums, bad breath, difficulty swallowing.', si: 'මුඛයේ තුවාල, මුඛය වියළීම, විදුරුමස් වලින් ලේ ගැලීම, දුගඳ.' },
+        diseases: { en: 'Gingivitis, Oral Thrush, Stomatitis, Oral Cancer.', si: 'විදුරුමස් රෝග, මුඛ පිළිකා, මුඛයේ දිලීර ආසාදන.' },
+        prevention: { en: 'Brush twice daily, avoid tobacco and betel quid, and visit a dentist regularly.', si: 'දිනකට දෙවරක් දත් මදින්න, දුම්කොළ හා බුලත් විට භාවිතයෙන් වළකින්න.' }
+      },
+      {
+        id: 'tongue', category: 'Head & Brain', system: 'digestive', color: '#f43f5e', pos: [0, 1.43, 0.11],
+        en: 'Tongue', si: 'දිව',
+        location: { en: 'Floor of the oral cavity (mouth).', si: 'මුඛ කුහරයේ පතුලේ පිහිටා ඇත.' },
+        functions: { en: 'Detects taste, manipulates food for chewing/swallowing, and shapes speech sounds.', si: 'රස හඳුනා ගැනීම, ආහාර ගිලීමට උපකාර කිරීම සහ වචන උච්චාරණය කිරීම.' },
+        howItWorks: { en: 'Interwoven skeletal muscles move flexibly while taste buds detect sweet, sour, salty, bitter, and umami.', si: 'නම්‍යශීලී මාංශ පේශි මගින් චලනය වන අතර රස අංකුර මගින් රස වර්ග 5ක් හඳුනා ගනී.' },
+        facts: { en: 'Every person has a completely unique tongue print, just like fingerprints.', si: 'ඇඟිලි සලකුණු මෙන්ම සෑම පුද්ගලයෙකුටම ආවේණික දිවේ සලකුණක් ඇත.' },
+        symptoms: { en: 'White coating, soreness, swelling, loss of taste, burning sensation.', si: 'දිවේ සුදු පැහැති ආලේපනයක් බැඳීම, වේදනාව, ඉදිමීම, රස නොදැනීම.' },
+        diseases: { en: 'Glossitis, Geographic Tongue, Oral Leukoplakia.', si: 'දිවේ ප්‍රදාහය (Glossitis), දිලීර ආසාදන.' },
+        prevention: { en: 'Gently clean your tongue daily, stay hydrated, and avoid excessively spicy/hot foods.', si: 'දිනපතා දිව පිරිසිදු කරන්න, ප්‍රමාණවත් ලෙස ජලය පානය කරන්න.' }
+      },
+      {
+        id: 'teeth', category: 'Head & Brain', system: 'digestive', color: '#f8fafc', pos: [0, 1.45, 0.125],
+        en: 'Teeth', si: 'දත්',
+        location: { en: 'Anchored in the upper maxilla and lower mandible jawbones.', si: 'උඩු හා යටි හනු අස්ථි වල සවි වී ඇත.' },
+        functions: { en: 'Cut, tear, and grind solid food into small digestible particles.', si: 'ඝන ආහාර කැපීම, ඉරීම සහ කුඩා කැබලි වලට ඇඹරීම.' },
+        howItWorks: { en: 'Covered by ultra-hard enamel over dentin and living pulp nerves.', si: 'ඉතා ශක්තිමත් එනමලයකින් ආවරණය වී ඇති අතර ඇතුළත ස්නායු හා රුධිර වාහිනී ඇත.' },
+        facts: { en: 'Tooth enamel is the hardest substance in the entire human body—harder than bone.', si: 'දත්වල එනමලය මිනිස් සිරුරේ ඇති ශක්තිමත්ම ද්‍රව්‍යයයි.' },
+        symptoms: { en: 'Toothache, sensitivity to hot/cold, bleeding gums, visible cavities.', si: 'දත් කැක්කුම, උණුසුම් හෝ සීතල දේට සංවේදී වීම, දත් දිරායාම.' },
+        diseases: { en: 'Dental Caries (cavities), Periodontitis, Pulpitis.', si: 'දත් දිරායාම, විදුරුමස් දියවීම (Periodontitis).' },
+        prevention: { en: 'Brush with fluoride toothpaste, floss daily, and limit sugary snacks and sodas.', si: 'ෆ්ලෝරයිඩ් දන්තාලේපයකින් දත් මදින්න, පැණි රස ආහාර සීමා කරන්න.' }
+      },
+      {
+        id: 'skull', category: 'Head & Brain', system: 'skeletal', color: '#e2e8f0', pos: [0, 1.56, 0.05],
+        en: 'Skull', si: 'හිස්කබල',
+        location: { en: 'Top of the vertebral column forming the head.', si: 'කොඳු ඇට පෙළේ ඉහළම කෙළවරේ හිස සාදමින් පිහිටයි.' },
+        functions: { en: 'Encases and protects the brain and supports facial sensory organs.', si: 'මොළය ආරක්ෂා කිරීම සහ මුහුණේ සංවේදී අවයව වලට ආධාරකයක් වීම.' },
+        howItWorks: { en: '22 cranial and facial bones fused by fibrous sutures, plus the movable mandible jaw.', si: 'අස්ථි 22ක් ස්ථිර සන්ධි මගින් එකට බැඳී ඇති අතර යටි හනුව චලනය විය හැකිය.' },
+        facts: { en: 'Babies are born with soft gaps (fontanelles) in the skull to allow rapid brain growth.', si: 'ළදරුවන්ගේ මොළය වර්ධනය වීමට ඉඩ දීම සඳහා හිස්කබලේ මෘදු හිඩැස් පිහිටයි.' },
+        symptoms: { en: 'Localized bone pain, facial asymmetry, tenderness after head trauma.', si: 'හිසට අනතුරක් වූ විට ඇතිවන වේදනාව, ඉදිමීම.' },
+        diseases: { en: 'Skull Fractures, Craniosynostosis, Sinus Osteoma.', si: 'හිස්කබලේ අස්ථි බිඳීම්.' },
+        prevention: { en: 'Wear protective headgear during sports/cycling and consume calcium and Vitamin D.', si: 'යතුරුපැදි ධාවනයේදී හිස්වැසුම් පළඳින්න, කැල්සියම් සහ විටමින් D ලබා ගන්න.' }
+      },
+
+      // ================= CHEST & UPPER BODY =================
+      {
+        id: 'heart', category: 'Chest & Upper Body', system: 'circulatory', color: '#f43f5e', pos: [0.04, 1.15, 0.06],
+        en: 'Heart', si: 'හදවත',
+        location: { en: 'Center-left of the chest (mediastinum), between the lungs behind the sternum.', si: 'පපුවේ මැදට වන්නට පෙනහළු දෙක අතර මඳක් වම් පසට බරව පිහිටා ඇත.' },
+        functions: { en: 'Pumps oxygenated blood to the entire body and sends deoxygenated blood to the lungs.', si: 'ඔක්සිජන් සහිත රුධිරය ශරීරය පුරා පොම්ප කිරීම සහ අපිරිසිදු රුධිරය පෙනහළු වෙත යැවීම.' },
+        howItWorks: { en: 'Four chambers (2 atria, 2 ventricles) contract rhythmically via electrical impulses from the SA node.', si: 'කුටීර 4ක් (කර්ණිකා 2 සහ කෝෂිකා 2) විද්‍යුත් සංඥා මගින් රිද්මයානුකූලව සංකෝචනය වේ.' },
+        facts: { en: 'Beats ~100,000 times a day and pumps about 5 liters of blood every minute.', si: 'දිනකට 100,000 වතාවක් පමණ ස්පන්දනය වන අතර විනාඩියකට රුධිරය ලීටර් 5ක් පොම්ප කරයි.' },
+        symptoms: { en: 'Chest pain/tightness, shortness of breath, palpitations, fatigue, swollen ankles.', si: 'පපුවේ වේදනාව හෝ තද ගතිය, හුස්ම ගැනීමේ අපහසුව, හෘද ස්පන්දනය වේගවත් වීම.' },
+        diseases: { en: 'Coronary Artery Disease, Heart Attack, Arrhythmia, Heart Failure, Hypertension.', si: 'හෘදයාබාධ, කිරීටක ධමනි රෝග, අධි රුධිර පීඩනය.' },
+        prevention: { en: 'Exercise 30 mins daily, eat heart-healthy fiber, reduce salt/trans fats, and avoid smoking.', si: 'දිනපතා ව්‍යායාම කරන්න, ලුණු සහ තෙල් අඩු කරන්න, දුම්පානයෙන් වළකින්න.' }
+      },
+      {
+        id: 'lungs', category: 'Chest & Upper Body', system: 'respiratory', color: '#38bdf8', pos: [-0.09, 1.17, 0.03],
+        en: 'Lungs', si: 'පෙනහළු',
+        location: { en: 'Inside the thoracic rib cage on either side of the heart.', si: 'ඉළ ඇට කූඩුව තුළ හදවත දෙපසින් පිහිටා ඇත.' },
+        functions: { en: 'Transfer inhaled oxygen into the bloodstream and expel carbon dioxide.', si: 'ආශ්වාස කරන ඔක්සිජන් රුධිරයට ලබා දී කාබන් ඩයොක්සයිඩ් පිට කිරීම.' },
+        howItWorks: { en: 'Air travels down the trachea and bronchi into 480 million microscopic alveoli sacs for gas exchange.', si: 'වාතය ශ්වාසනාලය හරහා ගර්ත මිලියන 480ක් වෙත ගොස් වායු හුවමාරුව සිදු කරයි.' },
+        facts: { en: 'If spread flat, the inner surface area of human lungs would cover half a tennis court.', si: 'පෙනහළු වල අභ්‍යන්තර පෘෂ්ඨය දිග හැරියහොත් ටෙනිස් පිටියකින් අඩක් පමණ ආවරණය වේ.' },
+        symptoms: { en: 'Persistent cough, wheezing, shortness of breath, chest pain, coughing up blood.', si: 'නොනවතින කැස්ස, හතිය, හුස්ම ගැනීමේ අපහසුව, පපුවේ වේදනාව.' },
+        diseases: { en: 'Asthma, Pneumonia, COPD, Tuberculosis, Lung Cancer.', si: 'ඇදුම (Asthma), නියුමෝනියාව, ක්ෂය රෝගය, පෙනහළු පිළිකා.' },
+        prevention: { en: 'Never smoke, avoid air pollution, practice deep breathing, and get vaccinated.', si: 'දුම්පානයෙන් සම්පූර්ණයෙන් වළකින්න, පිරිසිදු වාතාශ්‍රය ලබා ගන්න.' }
+      },
+      {
+        id: 'liver', category: 'Chest & Upper Body', system: 'digestive', color: '#b45309', pos: [-0.07, 0.96, 0.06],
+        en: 'Liver', si: 'අක්මාව',
+        location: { en: 'Upper right quadrant of the abdomen, just below the diaphragm.', si: 'උදරයේ ඉහළ දකුණු පැත්තේ ප්‍රාචීරයට පහළින් පිහිටා ඇත.' },
+        functions: { en: 'Detoxifies chemicals, metabolizes drugs, produces bile for fat digestion, and stores glycogen.', si: 'විෂ ද්‍රව්‍ය ඉවත් කිරීම, පිත නිපදවීම, පෝෂ්‍ය පදාර්ථ ගබඩා කිරීම සහ රුධිරය පිරිසිදු කිරීම.' },
+        howItWorks: { en: 'Hepatocyte cells filter nutrient-rich blood from the digestive tract via the hepatic portal vein.', si: 'අක්මා සෛල මගින් ආහාර ජීර්ණ පද්ධතියෙන් එන රුධිරය පෙරා විෂ හරණය කරයි.' },
+        facts: { en: 'The liver is the only visceral organ capable of regenerating itself even if 70% is removed.', si: 'අක්මාවෙන් 70%ක් ඉවත් කළත් නැවත වර්ධනය වීමේ විශ්මිත හැකියාවක් ඇත.' },
+        symptoms: { en: 'Jaundice (yellow skin/eyes), dark urine, abdominal swelling, chronic fatigue, nausea.', si: 'ඇස් සහ සම කහ පැහැ වීම (සෙංගමාලය), තද පැහැ මුත්‍රා, උදරය ඉදිමීම, තෙහෙට්ටුව.' },
+        diseases: { en: 'Fatty Liver Disease, Hepatitis (A, B, C), Cirrhosis.', si: 'අක්මාවේ තෙල් තැන්පත් වීම (Fatty Liver), හෙපටයිටිස්, සිරෝසිස්.' },
+        prevention: { en: 'Limit alcohol and excess sugar, maintain a healthy weight, and get Hepatitis B vaccines.', si: 'මත්පැන් සහ අධික සීනි භාවිතයෙන් වළකින්න, සමබල ආහාර වේලක් ගන්න.' }
+      },
+      {
+        id: 'stomach', category: 'Chest & Upper Body', system: 'digestive', color: '#ec4899', pos: [0.06, 0.95, 0.05],
+        en: 'Stomach', si: 'ආමාශය',
+        location: { en: 'Upper left abdomen, between the esophagus and small intestine.', si: 'උදරයේ ඉහළ වම් පැත්තේ අන්නස්‍රෝතය සහ කුඩා අන්ත්‍රය අතර පිහිටා ඇත.' },
+        functions: { en: 'Churns food and secretes hydrochloric acid and pepsin to break down proteins.', si: 'ආහාර අඹරා හයිඩ්‍රොක්ලෝරික් අම්ලය සහ එන්සයිම මගින් ප්‍රෝටීන් ජීර්ණය කරයි.' },
+        howItWorks: { en: 'Strong muscular walls mix food into liquid chyme while a thick mucus layer protects the stomach lining.', si: 'මාංශ පේශි බිත්ති ආහාර මිශ්‍ර කරන අතර ශ්ලේෂ්මල ස්ථරයක් ආමාශය අම්ල වලින් ආරක්ෂා කරයි.' },
+        facts: { en: 'Stomach acid is strong enough to dissolve metal, yet the lining renews every 3–4 days.', si: 'ආමාශයික අම්ලය ඉතා ප්‍රබල නමුත් සෑම දින 3-4කට වරක් එහි අභ්‍යන්තර ආවරණය අලුත් වේ.' },
+        symptoms: { en: 'Burning upper abdominal pain, acid reflux, bloating, nausea, vomiting.', si: 'බඩ දැවිල්ල, අම්ල පිත්ත (Gastritis), බඩ පිපීම, ඔක්කාරය.' },
+        diseases: { en: 'Gastritis, Peptic Ulcers, GERD (Acid Reflux).', si: 'ගැස්ට්‍රයිටිස් (Gastritis), ආමාශයේ තුවාල (Ulcers).' },
+        prevention: { en: 'Eat meals on time, avoid excessive spicy/fried foods, manage stress, and avoid unnecessary NSAIDs.', si: 'නියමිත වේලාවට ආහාර ගන්න, අධික මිරිස් සහ තෙල් ආහාර අඩු කරන්න, මානසික ආතතිය පාලනය කරන්න.' }
+      },
+      {
+        id: 'pancreas', category: 'Chest & Upper Body', system: 'endocrine', color: '#a855f7', pos: [0.02, 0.91, 0.01],
+        en: 'Pancreas', si: 'අග්න්‍යාශය',
+        location: { en: 'Deep in the upper abdomen behind the stomach.', si: 'ආමාශයට පිටුපසින් උදරයේ ඉහළ කොටසේ පිහිටා ඇත.' },
+        functions: { en: 'Produces digestive enzymes and regulates blood sugar via insulin and glucagon hormones.', si: 'ආහාර ජීර්ණ එන්සයිම නිපදවීම සහ ඉන්සියුලින් හෝමෝනය මගින් රුධිරයේ සීනි මට්ටම පාලනය කිරීම.' },
+        howItWorks: { en: 'Exocrine cells release enzymes into the duodenum, while Islets of Langerhans release hormones into blood.', si: 'බහිස්ස්‍රාවී සෛල එන්සයිම නිකුත් කරන අතර අන්තරාසර්ග සෛල ඉන්සියුලින් රුධිරයට මුදා හරියි.' },
+        facts: { en: 'The pancreas is a dual-role organ belonging to both the digestive and endocrine systems.', si: 'අග්න්‍යාශය ආහාර ජීර්ණ සහ අන්තරාසර්ග යන පද්ධති දෙකටම අයත් විශේෂ අවයවයකි.' },
+        symptoms: { en: 'Upper abdominal pain radiating to the back, unexplained weight loss, excessive thirst.', si: 'පිටුපසට විහිදෙන උදර වේදනාව, අධික පිපාසය, බර අඩුවීම.' },
+        diseases: { en: 'Type 1 & Type 2 Diabetes Mellitus, Pancreatitis.', si: 'දියවැඩියාව (Diabetes), අග්න්‍යාශ ප්‍රදාහය (Pancreatitis).' },
+        prevention: { en: 'Maintain healthy blood sugar, avoid alcohol abuse, and eat low-glycemic whole foods.', si: 'සීනි පාලනය කරන්න, මත්පැන් වලින් වළකින්න, තන්තු බහුල ආහාර ගන්න.' }
+      },
+      {
+        id: 'esophagus', category: 'Chest & Upper Body', system: 'digestive', color: '#f59e0b', pos: [0, 1.25, -0.01],
+        en: 'Esophagus', si: 'අන්නස්‍රෝතය',
+        location: { en: 'Runs behind the trachea through the chest from throat to stomach.', si: 'උගුරේ සිට ආමාශය දක්වා ශ්වාසනාලයට පිටුපසින් පිහිටි නාලයකි.' },
+        functions: { en: 'Transports swallowed food and liquids from the pharynx to the stomach.', si: 'ගිලින ආහාර සහ දියර උගුරේ සිට ආමාශය දක්වා ගෙන යාම.' },
+        howItWorks: { en: 'Wave-like muscular contractions called peristalsis push food downward even if upside down.', si: 'ක්‍රමාකුංචන චලන (Peristalsis) මගින් ආහාර ආමාශය වෙත තල්ලු කරයි.' },
+        facts: { en: 'Food takes only 4 to 8 seconds to travel down the 25 cm esophagus.', si: 'සෙ.මී. 25ක් දිග අන්නස්‍රෝතය හරහා ආහාර ගමන් කිරීමට ගත වන්නේ තත්පර 4-8ක් පමණි.' },
+        symptoms: { en: 'Heartburn, difficulty swallowing (dysphagia), painful swallowing, regurgitation.', si: 'පපුවේ දැවිල්ල, ආහාර ගිලීමේ අපහසුව.' },
+        diseases: { en: 'Esophagitis, GERD, Barrett’s Esophagus.', si: 'අන්නස්‍රෝත ප්‍රදාහය, අම්ල පිත්ත රෝගය.' },
+        prevention: { en: 'Chew food thoroughly, avoid lying down immediately after meals, and avoid smoking.', si: 'ආහාර හොඳින් සපා ගිලින්න, ආහාර ගත් විගස නිදා ගැනීමෙන් වළකින්න.' }
+      },
+      {
+        id: 'ribs', category: 'Chest & Upper Body', system: 'skeletal', color: '#cbd5e1', pos: [0, 1.14, 0.09],
+        en: 'Ribs', si: 'ඉළ ඇට',
+        location: { en: 'Encircling the thoracic cavity from the spine to the sternum.', si: 'කොඳු ඇට පෙළේ සිට උරෝස්ථිය දක්වා පපු කුහරය වටා පිහිටා ඇත.' },
+        functions: { en: 'Protect vital organs (heart and lungs) and expand/contract to assist breathing.', si: 'හදවත සහ පෙනහළු ආරක්ෂා කිරීම සහ හුස්ම ගැනීමට උපකාර කිරීම.' },
+        howItWorks: { en: '12 pairs of curved bones connected by costal cartilage allow the chest cage to flex during inhalation.', si: 'ඉළ ඇට යුගල 12ක් කාටිලේජ මගින් සම්බන්ධ වී ආශ්වාසයේදී ප්‍රසාරණය වේ.' },
+        facts: { en: 'Both men and women have 24 ribs (12 pairs) in total.', si: 'පුරුෂ සහ ස්ත්‍රී දෙපාර්ශවයටම ඉළ ඇට 24ක් (යුගල 12ක්) බැගින් ඇත.' },
+        symptoms: { en: 'Sharp chest pain when breathing deeply, coughing, or pressing the chest wall.', si: 'ගැඹුරින් හුස්ම ගන්නා විට හෝ කහින විට පපුවේ ඇතිවන තියුණු වේදනාව.' },
+        diseases: { en: 'Rib Fractures, Costochondritis.', si: 'ඉළ ඇට බිඳීම්, ඉළ ඇට කාටිලේජ ප්‍රදාහය.' },
+        prevention: { en: 'Maintain bone strength with calcium/Vitamin D and use seatbelts in vehicles.', si: 'කැල්සියම් සහ විටමින් D ලබා ගන්න, වාහන වල ගමන් කිරීමේදී ආසන පටි පළඳින්න.' }
+      },
+
+      // ================= DIGESTIVE SYSTEM =================
+      {
+        id: 'small_intestine', category: 'Digestive System', system: 'digestive', color: '#facc15', pos: [0, 0.78, 0.05],
+        en: 'Small Intestine', si: 'කුඩා අන්ත්‍රය',
+        location: { en: 'Coiled centrally within the abdominal cavity, framed by the large intestine.', si: 'උදර කුහරයේ මැද කොටසේ දඟර ගැසී පිහිටා ඇත.' },
+        functions: { en: 'Completes chemical digestion and absorbs 90% of nutrients into the bloodstream.', si: 'ආහාර ජීර්ණය සම්පූර්ණ කර පෝෂ්‍ය පදාර්ථ වලින් 90%ක් රුධිරයට උරා ගනී.' },
+        howItWorks: { en: 'Millions of finger-like villi and microvilli dramatically increase surface area for absorption.', si: 'අංගුලිකා (Villi) මිලියන ගණනක් මගින් පෝෂ්‍ය පදාර්ථ ඉතා කාර්යක්ෂමව උරා ගනී.' },
+        facts: { en: 'Measures about 6 meters (20 feet) long—nearly four times a person’s height!', si: 'මීටර් 6ක් (අඩි 20ක්) පමණ දිගින් යුක්ත වේ.' },
+        symptoms: { en: 'Abdominal cramps, diarrhea, bloating, nutritional deficiencies, weight loss.', si: 'උදරයේ කැක්කුම, පාචනය, බඩ පිපීම, පෝෂණ ඌනතා.' },
+        diseases: { en: 'Celiac Disease, Crohn’s Disease, Enteritis.', si: 'සීලියැක් රෝගය, ක්‍රෝන් රෝගය, අන්ත්‍ර ආසාදන.' },
+        prevention: { en: 'Eat fiber-rich foods, probiotics, wash hands before eating, and drink clean water.', si: 'තන්තු බහුල ආහාර ගන්න, පිරිසිදු ජලය පානය කරන්න, ආහාර ගැනීමට පෙර අත් සෝදන්න.' }
+      },
+      {
+        id: 'large_intestine', category: 'Digestive System', system: 'digestive', color: '#d97706', pos: [0.09, 0.78, 0.04],
+        en: 'Large Intestine', si: 'මහා අන්ත්‍රය',
+        location: { en: 'Frames the small intestine around the perimeter of the abdomen.', si: 'කුඩා අන්ත්‍රය වට කරමින් උදර කුහරයේ පිහිටා ඇත.' },
+        functions: { en: 'Absorbs water and electrolytes, houses beneficial gut bacteria, and forms stool.', si: 'ජලය සහ ලවණ නැවත උරා ගැනීම, හිතකර බැක්ටීරියා පවත්වා ගැනීම සහ මළපහ සෑදීම.' },
+        howItWorks: { en: 'Slow muscular contractions move waste through the ascending, transverse, and descending colon.', si: 'මන්දගාමී මාංශ පේශි චලන මගින් අපද්‍රව්‍ය ගුද මාර්ගය වෙත ගෙන යයි.' },
+        facts: { en: 'Home to trillions of beneficial gut microbes that synthesize Vitamin K and B vitamins.', si: 'විටමින් K සහ B නිපදවන හිතකර බැක්ටීරියා ට්‍රිලියන ගණනක් මෙහි වාසය කරයි.' },
+        symptoms: { en: 'Constipation, diarrhea, blood in stool, abdominal pain, gas.', si: 'මලබද්ධය, පාචනය, මළපහ සමඟ රුධිරය පිටවීම, උදර වේදනාව.' },
+        diseases: { en: 'Irritable Bowel Syndrome (IBS), Ulcerative Colitis, Colorectal Cancer.', si: 'මලබද්ධය, මහා අන්ත්‍ර ප්‍රදාහය (Colitis), මහා අන්ත්‍ර පිළිකා.' },
+        prevention: { en: 'Eat plenty of fruits, vegetables, and whole grains; drink 8 glasses of water daily.', si: 'පළතුරු, එළවළු සහ ධාන්‍ය බහුලව ආහාරයට ගන්න; දිනපතා ප්‍රමාණවත් ජලය පානය කරන්න.' }
+      },
+      {
+        id: 'appendix', category: 'Digestive System', system: 'immune', color: '#22c55e', pos: [-0.11, 0.69, 0.05],
+        en: 'Appendix', si: 'උණ්ඩුක පුච්ඡය',
+        location: { en: 'Lower right abdomen, attached to the cecum of the large intestine.', si: 'උදරයේ පහළ දකුණු කෙළවරේ මහා අන්ත්‍රයට සම්බන්ධව පිහිටා ඇත.' },
+        functions: { en: 'Acts as a safe house for beneficial gut bacteria and supports mucosal immunity.', si: 'හිතකර බැක්ටීරියා ආරක්ෂා කර තබා ගැනීම සහ ප්‍රතිශක්තියට සහාය වීම.' },
+        howItWorks: { en: 'Contains lymphoid tissue that helps repopulate healthy gut flora after infections.', si: 'ආසාදන වලින් පසු අන්ත්‍රයේ හිතකර බැක්ටීරියා නැවත වර්ධනය කිරීමට උපකාරී වේ.' },
+        facts: { en: 'Once thought useless, scientists now recognize it as a reservoir for healthy gut microbes.', si: 'අතීතයේ ප්‍රයෝජනයක් නැතැයි සිතුවද, වර්තමානයේ එය හිතකර බැක්ටීරියා ගබඩාවක් ලෙස හඳුනාගෙන ඇත.' },
+        symptoms: { en: 'Sudden sharp pain starting near the navel and shifting to the lower right abdomen, fever, nausea.', si: 'නාභිය අසලින් ආරම්භ වී උදරයේ පහළ දකුණු පැත්තට යන දැඩි වේදනාව, උණ, වමනය.' },
+        diseases: { en: 'Appendicitis (acute inflammation requiring urgent medical care).', si: 'ඇපෙන්ඩිසයිටිස් (Appendicitis - උණ්ඩුක පුච්ඡ ප්‍රදාහය).' },
+        prevention: { en: 'High-fiber diets reduce the risk of blockage; seek immediate care for lower-right abdominal pain.', si: 'තන්තු බහුල ආහාර ගන්න; උදරයේ පහළ දකුණු පැත්තේ දැඩි වේදනාවක් ඇති වුවහොත් වහාම වෛද්‍ය උපදෙස් ගන්න.' }
+      },
+      {
+        id: 'gallbladder', category: 'Digestive System', system: 'digestive', color: '#10b981', pos: [-0.06, 0.91, 0.06],
+        en: 'Gallbladder', si: 'පිත්තාශය',
+        location: { en: 'Small pear-shaped pouch tucked beneath the right lobe of the liver.', si: 'අක්මාවේ දකුණු පෙත්තට යටින් පිහිටි කුඩා මල්ලක් වැනි අවයවයකි.' },
+        functions: { en: 'Stores and concentrates bile produced by the liver and releases it to digest fats.', si: 'අක්මාව නිපදවන පිත ගබඩා කර මේදය ජීර්ණය කිරීම සඳහා කුඩා අන්ත්‍රයට මුදා හැරීම.' },
+        howItWorks: { en: 'Contracts in response to fatty meals, squeezing bile through the bile duct into the duodenum.', si: 'තෙල් සහිත ආහාර ගත් විට සංකෝචනය වී පිත කුඩා අන්ත්‍රයට යවයි.' },
+        facts: { en: 'Holds about 30–50 milliliters of concentrated bile.', si: 'මෙහි පිත මිලිලීටර් 30-50ක් පමණ ගබඩා වී පවතී.' },
+        symptoms: { en: 'Sharp pain in the upper right abdomen after fatty meals, nausea, indigestion.', si: 'තෙල් ආහාර ගත් පසු උදරයේ ඉහළ දකුණු පැත්තේ ඇතිවන දැඩි වේදනාව, ඔක්කාරය.' },
+        diseases: { en: 'Gallstones (Cholelithiasis), Cholecystitis.', si: 'පිත්තාශයේ ගල් (Gallstones), පිත්තාශ ප්‍රදාහය.' },
+        prevention: { en: 'Avoid crash dieting, limit saturated fats, and eat healthy fiber.', si: 'අධික තෙල් සහිත ආහාර සීමා කරන්න, සමබල ආහාර වේලක් ගන්න.' }
+      },
+
+      // ================= URINARY SYSTEM =================
+      {
+        id: 'kidneys', category: 'Urinary System', system: 'urinary', color: '#14b8a6', pos: [-0.08, 0.88, -0.04],
+        en: 'Kidneys', si: 'වකුගඩු',
+        location: { en: 'Two bean-shaped organs on either side of the spine at the lower back.', si: 'පිටුපස ඉණ ප්‍රදේශයේ කොඳු ඇට පෙළ දෙපසින් පිහිටා ඇත.' },
+        functions: { en: 'Filter waste from blood, balance water/electrolytes, and regulate blood pressure.', si: 'රුධිරය පෙරා අපද්‍රව්‍ය ඉවත් කිරීම, ජලය හා ලවණ සමතුලිත කිරීම සහ රුධිර පීඩනය පාලනය කිරීම.' },
+        howItWorks: { en: 'Over 1 million nephrons per kidney filter ~180 liters of fluid daily, producing 1.5L of urine.', si: 'එක් වකුගඩුවක ඇති නෙෆ්‍රෝන මිලියනයකට වඩා වැඩි ප්‍රමාණයක් දිනකට රුධිරය ලීටර් 180ක් පමණ පෙරයි.' },
+        facts: { en: 'The right kidney sits slightly lower than the left to make room for the liver.', si: 'අක්මාවට ඉඩ දීම සඳහා දකුණු වකුගඩුව වම් වකුගඩුවට වඩා මඳක් පහළින් පිහිටයි.' },
+        symptoms: { en: 'Lower back flank pain, foamy or dark/bloody urine, swollen feet/eyes, fatigue.', si: 'කොන්ද දෙපස වේදනාව, මුත්‍රා වල පෙන ගතිය හෝ රුධිරය පිටවීම, පාද ඉදිමීම.' },
+        diseases: { en: 'Chronic Kidney Disease (CKD), Kidney Stones, Nephritis.', si: 'නිදන්ගත වකුගඩු රෝග, වකුගඩු වල ගල්.' },
+        prevention: { en: 'Drink plenty of clean water, reduce salt, control blood pressure/sugar, and avoid excess painkillers.', si: 'පිරිසිදු ජලය බහුලව පානය කරන්න, ලුණු අඩු කරන්න, අනවශ්‍ය වේදනා නාශක වලින් වළකින්න.' }
+      },
+      {
+        id: 'ureters', category: 'Urinary System', system: 'urinary', color: '#2dd4bf', pos: [-0.05, 0.74, -0.02],
+        en: 'Ureters', si: 'මුත්‍රා වාහිනී',
+        location: { en: 'Two narrow tubes running from each kidney down to the urinary bladder.', si: 'වකුගඩු දෙකේ සිට මුත්‍රාශය දක්වා විහිදෙන සිහින් නාල දෙකකි.' },
+        functions: { en: 'Transport urine continuously from the kidneys to the bladder.', si: 'වකුගඩු වල නිපදවන මුත්‍රා මුත්‍රාශය වෙත ගෙන යාම.' },
+        howItWorks: { en: 'Smooth muscle waves propel urine downward while one-way valves prevent backflow.', si: 'මාංශ පේශි සංකෝචන මගින් මුත්‍රා පහළට යවන අතර ආපසු ගලා ඒම වළක්වයි.' },
+        facts: { en: 'Each ureter is about 25–30 cm long and only 3–4 mm wide.', si: 'සෑම මුත්‍රා වාහිනියක්ම සෙ.මී. 25-30ක් පමණ දිග වේ.' },
+        symptoms: { en: 'Severe wave-like flank/groin pain, painful urination, blood in urine.', si: 'ඉණේ සිට ඉකිලිය දක්වා විහිදෙන දැඩි වේදනාව, මුත්‍රා දැවිල්ල.' },
+        diseases: { en: 'Ureteral Stones, Ureteritis, Hydronephrosis.', si: 'මුත්‍රා වාහිනී වල ගල් සිරවීම.' },
+        prevention: { en: 'Stay well-hydrated daily to flush minerals before stones form.', si: 'ගල් සෑදීම වැළැක්වීමට දිනපතා ප්‍රමාණවත් ජලය පානය කරන්න.' }
+      },
+      {
+        id: 'bladder', category: 'Urinary System', system: 'urinary', color: '#0ea5e9', pos: [0, 0.62, 0.04],
+        en: 'Bladder', si: 'මුත්‍රාශය',
+        location: { en: 'Lower pelvic cavity behind the pubic bone.', si: 'ශ්‍රෝණි කුහරයේ පහළ ඉදිරිපස කොටසේ පිහිටා ඇත.' },
+        functions: { en: 'Temporarily stores urine until voluntary elimination via the urethra.', si: 'මුත්‍රා පිට කරන තෙක් තාවකාලිකව ගබඩා කර තබා ගැනීම.' },
+        howItWorks: { en: 'Stretchable transitional epithelium expands as it fills, signaling the brain when ~300 mL is reached.', si: 'මුත්‍රා පිරෙන විට ප්‍රසාරණය වී මි.ලී. 300ක් පමණ වූ විට මොළයට සංඥා යවයි.' },
+        facts: { en: 'A healthy adult bladder can comfortably hold 400 to 600 mL of urine.', si: 'නිරෝගී වැඩිහිටියෙකුගේ මුත්‍රාශයක මුත්‍රා මිලිලීටර් 400-600ක් පමණ රඳවා ගත හැකිය.' },
+        symptoms: { en: 'Frequent urination, burning sensation, urgency, pelvic discomfort.', si: 'නිතර මුත්‍රා පිටවීම, මුත්‍රා දැවිල්ල, යටි බඩේ වේදනාව.' },
+        diseases: { en: 'Urinary Tract Infection (UTI), Cystitis, Overactive Bladder.', si: 'මුත්‍රා ආසාදන (UTI), මුත්‍රාශ ප්‍රදාහය.' },
+        prevention: { en: 'Drink water regularly, do not hold urine for long periods, and maintain good hygiene.', si: 'මුත්‍රා පිට කිරීම ප්‍රමාද නොකරන්න, පිරිසිදු ජලය පානය කරන්න.' }
+      },
+
+      // ================= MUSCULOSKELETAL SYSTEM =================
+      {
+        id: 'muscles', category: 'Musculoskeletal System', system: 'muscular', color: '#f97316', pos: [-0.21, 1.15, 0.02],
+        en: 'Muscles', si: 'මාංශ පේශි',
+        location: { en: 'Attached across the skeleton, heart wall, and hollow internal organs.', si: 'අස්ථි වලට සම්බන්ධව, හදවතේ සහ අභ්‍යන්තර අවයව වල පිහිටා ඇත.' },
+        functions: { en: 'Produce movement, stabilize joints, maintain posture, and generate 85% of body heat.', si: 'ශරීරය චලනය කිරීම, ඉරියව් පවත්වා ගැනීම සහ ශරීර උෂ්ණත්වය නිපදවීම.' },
+        howItWorks: { en: 'Actin and myosin protein filaments slide past each other when triggered by nerve impulses and ATP.', si: 'ස්නායු සංඥා ලැබුණු විට පේශි තන්තු සංකෝචනය වීමෙන් චලනය ඇති කරයි.' },
+        facts: { en: 'The human body has over 600 skeletal muscles, accounting for ~40% of body weight.', si: 'මිනිස් සිරුරේ කංකාල පේශි 600කට වඩා ඇති අතර එය බරින් 40%ක් පමණ වේ.' },
+        symptoms: { en: 'Muscle cramps, weakness, soreness, spasms, stiffness.', si: 'මාංශ පේශි පෙරළීම (Cramps), දුර්වලතාවය, වේදනාව, තද ගතිය.' },
+        diseases: { en: 'Muscle Strains, Muscular Dystrophy, Myasthenia Gravis.', si: 'මාංශ පේශි ඇදීම්, පේශි දුර්වල වීමේ රෝග.' },
+        prevention: { en: 'Warm up before exercise, eat adequate protein and potassium, and stay hydrated.', si: 'ව්‍යායාම කිරීමට පෙර ඇඟ උණුසුම් කරන්න, ප්‍රෝටීන් සහ ජලය ලබා ගන්න.' }
+      },
+      {
+        id: 'bones', category: 'Musculoskeletal System', system: 'skeletal', color: '#f1f5f9', pos: [-0.12, 0.35, 0.02],
+        en: 'Bones', si: 'අස්ථි',
+        location: { en: 'Forming the internal structural framework throughout the entire body.', si: 'මුළු ශරීරය පුරාම අභ්‍යන්තර සැකිල්ල සාදමින් පිහිටයි.' },
+        functions: { en: 'Support the body, protect organs, anchor muscles, produce blood cells, and store calcium.', si: 'ශරීරයට ආධාර වීම, අවයව ආරක්ෂා කිරීම, රුධිර සෛල නිපදවීම සහ කැල්සියම් ගබඩා කිරීම.' },
+        howItWorks: { en: 'Living osteoblast and osteoclast cells continuously remodel mineralized collagen tissue.', si: 'අස්ථි සෛල මගින් නිරන්තරයෙන් අස්ථි පටක අලුත්වැඩියා කරමින් ශක්තිමත්ව තබයි.' },
+        facts: { en: 'Adults have 206 bones, and the femur (thigh bone) is stronger than concrete.', si: 'වැඩිහිටියෙකුට අස්ථි 206ක් ඇති අතර කලවා අස්ථිය (Femur) කොන්ක්‍රීට් වලටත් වඩා ශක්තිමත්ය.' },
+        symptoms: { en: 'Deep bone ache, fractures from minor falls, loss of height, posture stooping.', si: 'අස්ථි වේදනාව, සුළු වැටීමකින් පවා අස්ථි බිඳීම, කුදු වීම.' },
+        diseases: { en: 'Osteoporosis, Osteomalacia, Bone Fractures.', si: 'ඔස්ටියෝපොරෝසිස් (අස්ථි දිරායාම), අස්ථි බිඳීම්.' },
+        prevention: { en: 'Get sunlight for Vitamin D, eat calcium-rich foods, and do weight-bearing exercises.', si: 'උදෑසන හිරු එළිය ලබා ගන්න, කැල්සියම් බහුල ආහාර ගන්න, ව්‍යායාම කරන්න.' }
+      },
+      {
+        id: 'spine', category: 'Musculoskeletal System', system: 'skeletal', color: '#e2e8f0', pos: [0, 1.05, -0.09],
+        en: 'Spine', si: 'කොඳු ඇට පෙළ',
+        location: { en: 'Central posterior axis running from the base of the skull to the pelvis.', si: 'හිස්කබලේ පාදයේ සිට ශ්‍රෝණිය දක්වා පිටුපස මධ්‍යයේ පිහිටා ඇත.' },
+        functions: { en: 'Supports upright posture, allows flexible torso movement, and shields the spinal cord.', si: 'සෘජුව සිටගැනීමට උපකාර කිරීම, ශරීරය නැමීමට ඉඩ දීම සහ සුෂුම්නාව ආරක්ෂා කිරීම.' },
+        howItWorks: { en: '33 vertebrae stacked with shock-absorbing intervertebral discs form an S-shaped spring.', si: 'කශේරුකා 33ක් අතර ඇති කාටිලේජ මඬල මගින් කම්පන අවශෝෂණය කරයි.' },
+        facts: { en: 'You are about 1–2 cm taller in the morning before gravity compresses your spinal discs!', si: 'උදෑසන අවදි වූ විට ඔබේ උස සවස් කාලයට වඩා සෙ.මී. 1-2ක් පමණ වැඩිය.' },
+        symptoms: { en: 'Lower back or neck pain, sciatica radiating down legs, numbness, stiffness.', si: 'කොන්දේ හෝ බෙල්ලේ වේදනාව, කකුල් දිගේ විහිදෙන වේදනාව හෝ හිරිවැටීම.' },
+        diseases: { en: 'Herniated (Slipped) Disc, Scoliosis, Spondylosis, Sciatica.', si: 'කොඳු ඇට පෙළේ මඬල ලිස්සා යාම, සයටිකා (Sciatica).' },
+        prevention: { en: 'Maintain good sitting posture, lift heavy objects with your knees, and strengthen core muscles.', si: 'නිවැරදි ඉරියව්වෙන් වාඩි වන්න, බර ඔසවන විට දණහිස් නවා ඔසවන්න.' }
+      },
+      {
+        id: 'joints', category: 'Musculoskeletal System', system: 'skeletal', color: '#38bdf8', pos: [-0.12, 0.14, 0.03],
+        en: 'Joints', si: 'සන්ධි',
+        location: { en: 'Where two or more bones meet (knees, shoulders, elbows, hips, fingers).', si: 'අස්ථි දෙකක් හෝ වැඩි ගණනක් එකට හමුවන ස්ථාන (දණහිස්, උරහිස්, වැලමිට).' },
+        functions: { en: 'Enable smooth, low-friction movement and absorb mechanical shock.', si: 'අස්ථි අතර ඝර්ෂණයකින් තොරව චලනය වීමට ඉඩ සැලසීම.' },
+        howItWorks: { en: 'Smooth articular cartilage and lubricating synovial fluid cushion bone ends inside a capsule.', si: 'කාටිලේජ සහ සයිනෝවියල් තරලය මගින් අස්ථි එකිනෙක ගැටීම වළක්වයි.' },
+        facts: { en: 'Synovial fluid is five times more slippery than wet ice on ice!', si: 'සන්ධි තුළ ඇති තරලය අයිස් වලටත් වඩා පස් ගුණයකින් ලිස්සන සුළුය.' },
+        symptoms: { en: 'Joint stiffness, swelling, warmth, clicking sounds, pain during movement.', si: 'සන්ධි ඉදිමීම, වේදනාව, තද ගතිය, චලනය කිරීමේ අපහසුව.' },
+        diseases: { en: 'Osteoarthritis, Rheumatoid Arthritis, Gout.', si: 'ආතරයිටිස් (Arthritis), ගවුට් (Gout).' },
+        prevention: { en: 'Maintain a healthy body weight, stay active with low-impact exercise, and stay hydrated.', si: 'ශරීර බර පාලනය කරන්න, නිතිපතා සැහැල්ලු ව්‍යායාම කරන්න.' }
+      },
+      {
+        id: 'arms', category: 'Musculoskeletal System', system: 'muscular', color: '#fb923c', pos: [0.24, 1.04, 0.01],
+        en: 'Arms', si: 'බාහු',
+        location: { en: 'Extending from the shoulder glenohumeral joint down to the wrist.', si: 'උරහිස් සන්ධියේ සිට මැණික් කටුව දක්වා විහිදේ.' },
+        functions: { en: 'Position the hands in space for reaching, lifting, throwing, and carrying.', si: 'අත් නිසි තැනට යොමු කිරීම, බර එසවීම සහ විවිධ ක්‍රියාකාරකම් කිරීම.' },
+        howItWorks: { en: 'Humerus, radius, and ulna bones work as levers powered by biceps, triceps, and deltoid muscles.', si: 'අස්ථි සහ බයිසෙප්ස්/ට්‍රයිසෙප්ස් මාංශ පේශි ලීවර මෙන් ක්‍රියා කරයි.' },
+        facts: { en: 'The shoulder joint has the widest range of motion of any joint in the human body.', si: 'උරහිස් සන්ධිය මිනිස් සිරුරේ වැඩිම පරාසයක චලනය විය හැකි සන්ධියයි.' },
+        symptoms: { en: 'Aching, tingling down the arm, muscle fatigue, limited range of motion.', si: 'බාහු වේදනාව, හිරිවැටීම, එසවීමේ අපහසුව.' },
+        diseases: { en: 'Tendinitis, Rotator Cuff Injury, Tennis Elbow, Fractures.', si: 'ටෙනිස් එල්බෝ (Tennis Elbow), උරහිස් ආබාධ.' },
+        prevention: { en: 'Stretch shoulders and forearms regularly and avoid repetitive strain.', si: 'උරහිස් සහ අත් වලට නිතිපතා ව්‍යායාම ලබා දෙන්න.' }
+      },
+      {
+        id: 'hands', category: 'Musculoskeletal System', system: 'muscular', color: '#fdba74', pos: [0.29, 0.68, 0.03],
+        en: 'Hands', si: 'අත්',
+        location: { en: 'Distal end of each forearm beyond the wrist.', si: 'මැණික් කටුවෙන් පහළ බාහුවේ කෙළවරේ පිහිටයි.' },
+        functions: { en: 'Perform fine motor precision, grasping, writing, tool use, and tactile sensing.', si: 'ලිවීම, භාණ්ඩ ඇල්ලීම, සියුම් ක්‍රියාකාරකම් සහ ස්පර්ශය හඳුනා ගැනීම.' },
+        howItWorks: { en: '27 small bones controlled by forearm tendons and intrinsic hand muscles enable opposable thumb grip.', si: 'කුඩා අස්ථි 27ක් සහ කණ්ඩරා මගින් ඉතා සියුම් චලනයන් සිදු කරයි.' },
+        facts: { en: 'Your fingers contain no muscles—they are moved by muscles in your forearm via long tendons!', si: 'ඇඟිලි තුළ මාංශ පේශි නොමැති අතර ඒවා චලනය වන්නේ යටි බාහුවේ ඇති පේශි මගිනි.' },
+        symptoms: { en: 'Finger numbness, tingling, weak grip, stiff knuckles.', si: 'ඇඟිලි හිරිවැටීම, ග්‍රහණය දුර්වල වීම, සන්ධි තද වීම.' },
+        diseases: { en: 'Carpal Tunnel Syndrome, Trigger Finger, Hand Arthritis.', si: 'කාපල් ටනල් සින්ඩ්‍රෝමය, අත් සන්ධි ආතරයිටිස්.' },
+        prevention: { en: 'Take breaks during typing/phone use and do gentle wrist/finger stretches.', si: 'පරිගණක භාවිතයේදී අත් වලට විවේකයක් ලබා දෙන්න.' }
+      },
+      {
+        id: 'legs', category: 'Musculoskeletal System', system: 'muscular', color: '#f97316', pos: [0.12, 0.36, 0.01],
+        en: 'Legs', si: 'කකුල්',
+        location: { en: 'Extending from the hip pelvic girdle down to the ankles.', si: 'උකුල් සන්ධියේ සිට වළලුකර දක්වා විහිදේ.' },
+        functions: { en: 'Support entire body weight and power walking, running, jumping, and balance.', si: 'මුළු ශරීරයේම බර දරා ගැනීම සහ ඇවිදීම, දිවීම වැනි චලනයන් සිදු කිරීම.' },
+        howItWorks: { en: 'Femur, tibia, and fibula bones are driven by the body’s largest muscles (quadriceps, hamstrings, calves).', si: 'කලවා සහ කෙණ්ඩා මාංශ පේශි මගින් ශරීරය ඉදිරියට ගෙන යයි.' },
+        facts: { en: 'The quadriceps femoris is the strongest and heaviest muscle group in the human body.', si: 'කලවා මාංශ පේශි මිනිස් සිරුරේ ශක්තිමත්ම සහ බරම පේශි සමූහයයි.' },
+        symptoms: { en: 'Calf cramps, leg swelling, varicose veins, pain when walking.', si: 'කෙණ්ඩා පෙරළීම, කකුල් ඉදිමීම, නහර ගැට ගැසීම.' },
+        diseases: { en: 'Varicose Veins, Deep Vein Thrombosis (DVT), Shin Splints.', si: 'නහර ගැට ගැසීම (Varicose Veins), රුධිර කැටි ගැසීම.' },
+        prevention: { en: 'Walk daily, avoid sitting motionless for hours, and elevate legs if swollen.', si: 'දිනපතා ඇවිදින්න, එක දිගට පැය ගණන් වාඩි වී සිටීමෙන් වළකින්න.' }
+      },
+      {
+        id: 'feet', category: 'Musculoskeletal System', system: 'skeletal', color: '#cbd5e1', pos: [0.12, -0.14, 0.06],
+        en: 'Feet', si: 'පාද',
+        location: { en: 'Terminal weight-bearing structures below the ankle joint.', si: 'වළලුකර සන්ධියට පහළින් පොළොව සමඟ සම්බන්ධ වන කොටසයි.' },
+        functions: { en: 'Bear body weight, absorb ground impact, and propel forward motion.', si: 'ශරීර බර දරා ගැනීම, කම්පන අවශෝෂණය සහ සමතුලිතතාවය රැක ගැනීම.' },
+        howItWorks: { en: '26 bones, 33 joints, and over 100 ligaments form elastic arches that act like springs.', si: 'අස්ථි 26ක් සහ සන්ධි 33ක් ආරුක්කුවක් ලෙස සැකසී කම්පන දරා ගනී.' },
+        facts: { en: 'About one-quarter of all the bones in the human body are located in your two feet!', si: 'මිනිස් සිරුරේ ඇති මුළු අස්ථි වලින් හතරෙන් එකක්ම පිහිටා ඇත්තේ දෙපා වලය.' },
+        symptoms: { en: 'Heel pain, arch soreness, numbness, swelling, slow-healing sores.', si: 'විළුඹ වේදනාව, යටිපතුල් දැවිල්ල, හිරිවැටීම.' },
+        diseases: { en: 'Plantar Fasciitis, Diabetic Neuropathy, Athlete’s Foot.', si: 'විළුඹේ වේදනාව (Plantar Fasciitis), දියවැඩියා පාද ආබාධ.' },
+        prevention: { en: 'Wear supportive footwear, wash and dry feet daily, and inspect feet regularly if diabetic.', si: 'සුවපහසු පාවහන් පළඳින්න, දිනපතා පාද පිරිසිදුව හා වියළිව තබා ගන්න.' }
+      },
+
+      // ================= OTHER BODY SYSTEMS =================
+      {
+        id: 'skin', category: 'Other Body Systems', system: 'immune', color: '#fde68a', pos: [0.19, 0.95, 0.08],
+        en: 'Skin', si: 'සම',
+        location: { en: 'Outer protective covering enveloping the entire external body.', si: 'මුළු ශරීරයම ආවරණය කරමින් පිටතින් පිහිටා ඇත.' },
+        functions: { en: 'Protects against microbes/UV rays, regulates temperature via sweat, and synthesizes Vitamin D.', si: 'විෂබීජ හා හිරු කිරණ වලින් ආරක්ෂා කිරීම, උෂ්ණත්වය පාලනය සහ විටමින් D නිපදවීම.' },
+        howItWorks: { en: 'Three layers—epidermis, dermis, and hypodermis—renew continuously and house touch receptors.', si: 'අපිචර්මය, චර්මය සහ අධෝචර්මය යන ස්ථර 3කින් සමන්විත වේ.' },
+        facts: { en: 'The skin is the largest organ in the human body, weighing around 3.5 to 4 kg.', si: 'සම මිනිස් සිරුරේ විශාලතම අවයවය වන අතර එහි බර කිලෝග්‍රෑම් 3.5-4ක් පමණ වේ.' },
+        symptoms: { en: 'Rashes, itching, dry peeling, unusual moles, redness, slow-healing wounds.', si: 'කැසීම, පලු දැමීම, සම වියළීම, අසාමාන්‍ය ලප.' },
+        diseases: { en: 'Eczema, Psoriasis, Acne, Fungal Infections, Skin Cancer.', si: 'දද (Eczema), සොරයිසිස්, කුරුලෑ, දිලීර ආසාදන.' },
+        prevention: { en: 'Use sunscreen, stay hydrated, cleanse gently, and avoid harsh chemical soaps.', si: 'හිරු එළියෙන් ආරක්ෂා වන්න, ප්‍රමාණවත් ජලය පානය කරන්න, සම පිරිසිදුව තබා ගන්න.' }
+      },
+      {
+        id: 'blood_vessels', category: 'Other Body Systems', system: 'circulatory', color: '#ef4444', pos: [-0.05, 1.05, 0.04],
+        en: 'Blood Vessels', si: 'රුධිර වාහිනී',
+        location: { en: 'Web-like network reaching every organ, muscle, and tissue in the body.', si: 'මුළු ශරීරයේම සෑම අවයවයක් හා පටකයක් වෙතම විහිදී ඇත.' },
+        functions: { en: 'Transport oxygenated blood (arteries), exchange nutrients (capillaries), and return blood (veins).', si: 'ඔක්සිජන් සහ පෝෂ්‍ය පදාර්ථ සෛල වෙත ගෙන යාම සහ අපද්‍රව්‍ය ආපසු ගෙන ඒම.' },
+        howItWorks: { en: 'Elastic arterial walls withstand heart pressure while venous valves prevent backward blood flow.', si: 'ධමනි පීඩනය දරා ගන්නා අතර ශිරා වල ඇති කපාට රුධිරය ආපසු ගැලීම වළක්වයි.' },
+        facts: { en: 'Laid end-to-end, your blood vessels would stretch ~100,000 km—circling Earth 2.5 times!', si: 'මිනිසෙකුගේ සියලුම රුධිර වාහිනී එකට තැබුවහොත් කි.මී. 100,000ක් පමණ දිග වේ.' },
+        symptoms: { en: 'Cold hands/feet, numbness, visible bulging veins, dizziness, high blood pressure.', si: 'අත් පා සීතල වීම, හිරිවැටීම, නහර ඉදිමීම, කරකැවිල්ල.' },
+        diseases: { en: 'Atherosclerosis, Hypertension, Aneurysm, Varicose Veins.', si: 'ධමනි අවහිර වීම, අධි රුධිර පීඩනය.' },
+        prevention: { en: 'Avoid trans fats and smoking, exercise regularly, and eat antioxidant-rich foods.', si: 'තෙල් සහිත ආහාර සහ දුම්පානයෙන් වළකින්න, නිතිපතා ව්‍යායාම කරන්න.' }
+      },
+      {
+        id: 'nervous_system', category: 'Other Body Systems', system: 'nervous', color: '#a855f7', pos: [0, 1.25, -0.07],
+        en: 'Nervous System', si: 'ස්නායු පද්ධතිය',
+        location: { en: 'Central brain and spinal cord branching into peripheral nerves throughout the body.', si: 'මොළය සහ සුෂුම්නාවේ සිට මුළු ශරීරය පුරාම විහිදී ඇත.' },
+        functions: { en: 'Coordinates voluntary actions, involuntary reflexes, sensory perception, and cognition.', si: 'සියලුම චලනයන්, ප්‍රතීක ක්‍රියා සහ සංවේදනයන් සම්බන්ධීකරණය කිරීම.' },
+        howItWorks: { en: 'Action potentials travel along myelinated nerve axons at speeds up to 120 meters per second.', si: 'ස්නායු ආවේග තත්පරයට මීටර් 120ක පමණ වේගයෙන් ශරීරය පුරා ගමන් කරයි.' },
+        facts: { en: 'Nerve impulses travel faster than a Formula 1 race car!', si: 'ස්නායු සංඥා ෆෝමියුලා 1 රේසිං මෝටර් රථයකටත් වඩා වේගයෙන් ගමන් කරයි.' },
+        symptoms: { en: 'Pins-and-needles tingling, muscle twitching, loss of coordination, chronic nerve pain.', si: 'හිරිවැටීම, පේශි ගැස්ම, සමබරතාවය ගිලිහීම, ස්නායු වේදනාව.' },
+        diseases: { en: 'Peripheral Neuropathy, Multiple Sclerosis, Parkinson’s Disease.', si: 'ස්නායු දුර්වලතා (Neuropathy), පාකින්සන් රෝගය.' },
+        prevention: { en: 'Eat Vitamin B12-rich foods, manage blood sugar, and protect your spine from injury.', si: 'විටමින් B12 බහුල ආහාර ගන්න, රුධිරයේ සීනි පාලනය කරන්න.' }
+      },
+      {
+        id: 'reproductive_system', category: 'Other Body Systems', system: 'reproductive', color: '#ec4899', pos: [0, 0.56, 0.02],
+        en: 'Reproductive System', si: 'ප්‍රජනක පද්ධතිය',
+        location: { en: 'Lower pelvic cavity (ovaries/uterus in females; testes/prostate in males).', si: 'ශ්‍රෝණි කුහරයේ පහළ කොටසේ පිහිටා ඇත.' },
+        functions: { en: 'Produces reproductive gametes (eggs/sperm), secretes sex hormones, and supports human life continuity.', si: 'ප්‍රජනක සෛල නිපදවීම, ලිංගික හෝමෝන ස්‍රාවය සහ නව ජීවියෙකු බිහි කිරීම.' },
+        howItWorks: { en: 'Regulated by pituitary hormones (FSH & LH) stimulating estrogen/progesterone or testosterone.', si: 'පිටියුටරි ග්‍රන්ථියේ හෝමෝන මගින් ප්‍රජනක ක්‍රියාවලිය පාලනය කරයි.' },
+        facts: { en: 'The human egg cell (ovum) is the largest cell in the human body, visible to the naked eye.', si: 'මිනිස් ඩිම්බ සෛලය මිනිස් සිරුරේ ඇති විශාලතම සෛලයයි.' },
+        symptoms: { en: 'Pelvic pain, irregular cycles, hormonal imbalances, unusual discharge or lumps.', si: 'යටි බඩේ වේදනාව, අක්‍රමවත් ඔසප් චක්‍රය, හෝමෝන අසමතුලිතතා.' },
+        diseases: { en: 'PCOS, Endometriosis, Prostate Enlargement, Infertility.', si: 'PCOS, පුරස්ථි ග්‍රන්ථි ඉදිමීම, මඳසරු භාවය.' },
+        prevention: { en: 'Practice safe hygiene, undergo regular health screenings, and maintain balanced nutrition.', si: 'පෞද්ගලික ස්වස්ථතාවය රැක ගන්න, නිතිපතා වෛද්‍ය පරීක්ෂණ සිදු කරන්න.' }
+      },
+      {
+        id: 'endocrine_system', category: 'Other Body Systems', system: 'endocrine', color: '#c084fc', pos: [0, 1.38, 0.04],
+        en: 'Endocrine System', si: 'අන්තරාසර්ග පද්ධතිය',
+        location: { en: 'Glands across the brain (pituitary/pineal), neck (thyroid), kidneys (adrenals), and pancreas.', si: 'මොළය, බෙල්ල (තයිරොයිඩ්), අග්න්‍යාශය සහ වකුගඩු මත පිහිටි ග්‍රන්ථි සමූහයකි.' },
+        functions: { en: 'Secretes chemical hormones into the bloodstream to regulate metabolism, growth, sleep, and stress.', si: 'හෝමෝන මගින් ශරීර වර්ධනය, පරිවෘත්තීය ක්‍රියා, නින්ද සහ මානසික ආතතිය පාලනය කිරීම.' },
+        howItWorks: { en: 'Glands release specific hormones that bind only to target cells with matching receptors.', si: 'ග්‍රන්ථි මගින් නිකුත් කරන හෝමෝන රුධිරය හරහා ගොස් අදාළ සෛල උත්තේජනය කරයි.' },
+        facts: { en: 'The pea-sized pituitary gland is called the "Master Gland" because it controls other glands.', si: 'කඩල ඇටයක් තරම් කුඩා පිටියුටරි ග්‍රන්ථිය අනෙකුත් ග්‍රන්ථි පාලනය කරන "ප්‍රධාන ග්‍රන්ථිය" ලෙස හැඳින්වේ.' },
+        symptoms: { en: 'Unexplained weight gain/loss, extreme fatigue, mood swings, heat/cold intolerance.', si: 'හේතුවක් නොමැතිව බර වැඩිවීම හෝ අඩුවීම, අධික තෙහෙට්ටුව, හිසකෙස් ගැලවී යාම.' },
+        diseases: { en: 'Hypothyroidism, Hyperthyroidism, Diabetes, Cushing’s Syndrome.', si: 'තයිරොයිඩ් ග්‍රන්ථි ආබාධ, දියවැඩියාව.' },
+        prevention: { en: 'Use iodized salt in moderation, manage chronic stress, and get regular hormone checkups.', si: 'අයඩින් සහිත ලුණු ප්‍රමාණවත්ව භාවිතා කරන්න, මානසික ආතතිය පාලනය කරන්න.' }
+      },
+      {
+        id: 'immune_system', category: 'Other Body Systems', system: 'immune', color: '#22c55e', pos: [0.06, 1.24, 0.04],
+        en: 'Immune System', si: 'ප්‍රතිශක්තිකරණ පද්ධතිය',
+        location: { en: 'Thymus, spleen, bone marrow, lymph nodes, tonsils, and circulating white blood cells.', si: 'තයිමස් ග්‍රන්ථිය, ප්ලීහාව, ඇටමිදුළු, වසා ගැටිති සහ සුදු රුධිරාණු තුළ පිහිටයි.' },
+        functions: { en: 'Identifies and destroys invading bacteria, viruses, fungi, and cancerous cells.', si: 'ශරීරයට ඇතුළු වන බැක්ටීරියා, වෛරස් සහ අහිතකර සෛල විනාශ කර ශරීරය ආරක්ෂා කිරීම.' },
+        howItWorks: { en: 'White blood cells (lymphocytes & phagocytes) recognize foreign antigens and produce targeted antibodies.', si: 'සුදු රුධිරාණු මගින් විෂබීජ හඳුනාගෙන ප්‍රතිදේහ නිපදවා ඒවා විනාශ කරයි.' },
+        facts: { en: 'Your immune system remembers past infections for decades via memory B and T cells.', si: 'මතක සෛල මගින් අතීතයේ වැළඳුණු රෝග කාරක වසර ගණනාවක් මතක තබා ගනී.' },
+        symptoms: { en: 'Frequent infections, swollen lymph nodes, prolonged fever, slow wound healing.', si: 'නිතර රෝගාබාධ වැළඳීම, වසා ගැටිති ඉදිමීම, තුවාල සුව වීම ප්‍රමාද වීම.' },
+        diseases: { en: 'Autoimmune Disorders (Lupus), Allergies, Immunodeficiency.', si: 'අසාත්මිකතා, ප්‍රතිශක්ති ඌනතා රෝග.' },
+        prevention: { en: 'Eat Vitamin C & Zinc-rich foods, sleep well, stay vaccinated, and exercise regularly.', si: 'විටමින් C සහ සින්ක් බහුල ආහාර ගන්න, හොඳ නින්දක් ලබා ගන්න, එන්නත් ලබා ගන්න.' }
+      }
+    ];
+
+    /* ==========================================================================
+       COMMON DISEASES & SYMPTOMS DATABASE
+       ========================================================================== */
+    const DISEASES_DATA = [
+      {
+        id: 'heart_disease',
+        organId: 'heart',
+        en: 'Heart Disease (Coronary Artery Disease)',
+        si: 'හෘද රෝග (කිරීටක ධමනි රෝග)',
+        affectedEn: 'Heart & Blood Vessels',
+        affectedSi: 'හදවත සහ රුධිර වාහිනී',
+        symptomsEn: 'Chest pain (angina), shortness of breath, pain radiating to left arm/jaw, cold sweats.',
+        symptomsSi: 'පපුවේ වේදනාව හෝ තද ගතිය, හුස්ම ගැනීමේ අපහසුව, වම් අතට විහිදෙන වේදනාව.',
+        causesEn: 'Plaque buildup (cholesterol) narrowing coronary arteries and reducing heart blood flow.',
+        causesSi: 'කිරීටක ධමනි තුළ කොලෙස්ටරෝල් තැන්පත් වී රුධිර ගමනාගමනය අවහිර වීම.',
+        riskEn: 'High blood pressure, high cholesterol, smoking, diabetes, obesity, sedentary lifestyle.',
+        riskSi: 'අධි රුධිර පීඩනය, අධික කොලෙස්ටරෝල්, දුම්පානය, දියවැඩියාව, ස්ථූලතාවය.',
+        preventionEn: 'Regular cardio exercise, balanced low-fat diet, quitting smoking, stress control.',
+        preventionSi: 'නිතිපතා ව්‍යායාම කිරීම, තෙල් සහ ලුණු අඩු ආහාර ගැනීම, දුම්පානය නතර කිරීම.',
+        urgentEn: 'Seek emergency care immediately if chest pain lasts >5 minutes or accompanies sweating/fainting.',
+        urgentSi: 'පපුවේ වේදනාව විනාඩි 5කට වඩා පවතී නම් හෝ දහඩිය දැමීම/ක්ලාන්තය ඇත්නම් වහාම රෝහල් ගත වන්න.'
+      },
+      {
+        id: 'asthma',
+        organId: 'lungs',
+        en: 'Asthma',
+        si: 'ඇදුම රෝගය (Asthma)',
+        affectedEn: 'Lungs & Airways',
+        affectedSi: 'පෙනහළු සහ ශ්වසන මාර්ග',
+        symptomsEn: 'Wheezing, shortness of breath, chest tightness, nighttime or early-morning coughing.',
+        symptomsSi: 'හතිය (Wheezing), හුස්ම ගැනීමේ අපහසුව, පපුවේ තද ගතිය, රාත්‍රී කැස්ස.',
+        causesEn: 'Chronic airway inflammation and hyper-responsiveness causing bronchial muscle constriction.',
+        causesSi: 'ශ්වසන නාල ඉදිමීම සහ සංකෝචනය වීම නිසා වාතය ගමන් කිරීම අපහසු වීම.',
+        riskEn: 'Allergens (dust mites, pollen), smoke, air pollution, cold air, family history.',
+        riskSi: 'දූවිලි, දුම, වායු දූෂණය, සීතල වාතය සහ පාරම්පරික සාධක.',
+        preventionEn: 'Avoid known triggers, keep living spaces dust-free, and follow prescribed inhaler plans.',
+        preventionSi: 'දූවිලි සහ දුමෙන් වළකින්න, වෛද්‍ය උපදෙස් මත ඉන්හේලර් (Inhaler) නිසි ලෙස භාවිතා කරන්න.',
+        urgentEn: 'Seek urgent help if rescue inhalers fail to relieve severe breathlessness or lips turn bluish.',
+        urgentSi: 'හුස්ම ගැනීමට ඉතා අපහසු නම් හෝ තොල් නිල් පැහැ ගැන්වේ නම් වහාම වෛද්‍ය ප්‍රතිකාර ලබා ගන්න.'
+      },
+      {
+        id: 'diabetes',
+        organId: 'pancreas',
+        en: 'Diabetes Mellitus',
+        si: 'දියවැඩියාව (Diabetes)',
+        affectedEn: 'Pancreas, Blood Vessels & Kidneys',
+        affectedSi: 'අග්න්‍යාශය, රුධිර වාහිනී සහ වකුගඩු',
+        symptomsEn: 'Excessive thirst, frequent urination, unexplained weight loss, fatigue, blurred vision.',
+        symptomsSi: 'අධික පිපාසය, නිතර මුත්‍රා පිටවීම, බර අඩුවීම, තෙහෙට්ටුව, තුවාල සුව වීම ප්‍රමාද වීම.',
+        causesEn: 'Insufficient insulin production by the pancreas or cellular resistance to insulin.',
+        causesSi: 'අග්න්‍යාශය මගින් ප්‍රමාණවත් ඉන්සියුලින් නිපදවීම අඩුවීම හෝ සිරුර ඉන්සියුලින් වලට ප්‍රතිරෝධී වීම.',
+        riskEn: 'High sugar/refined carb diet, physical inactivity, overweight, family history.',
+        riskSi: 'අධික සීනි සහ පිටි සහිත ආහාර, ව්‍යායාම මඳකම, ස්ථූලතාවය.',
+        preventionEn: 'Eat whole grains/vegetables, limit sugary drinks, exercise daily, and monitor blood glucose.',
+        preventionSi: 'සීනි සහ පැණි බීම සීමා කරන්න, තන්තු බහුල ආහාර ගන්න, දිනපතා ව්‍යායාම කරන්න.',
+        urgentEn: 'Seek immediate care for confusion, fruity breath, severe dehydration, or dangerously low sugar.',
+        urgentSi: 'සිහිමඳ ගතිය, අධික විජලනය හෝ සීනි මට්ටම ඉතා පහළ බැසීමක් ඇත්නම් වහාම රෝහල් ගත වන්න.'
+      },
+      {
+        id: 'hypertension',
+        organId: 'blood_vessels',
+        en: 'High Blood Pressure (Hypertension)',
+        si: 'අධි රුධිර පීඩනය',
+        affectedEn: 'Blood Vessels, Heart & Brain',
+        affectedSi: 'රුධිර වාහිනී, හදවත සහ මොළය',
+        symptomsEn: 'Often silent ("silent killer"); severe cases may cause morning headaches, nosebleeds, dizziness.',
+        symptomsSi: 'බොහෝ විට රෝග ලක්ෂණ නොපෙන්වයි; දැඩි වූ විට හිසරදය, කරකැවිල්ල, නාසයෙන් ලේ ගැලීම.',
+        causesEn: 'Persistently elevated force of blood pushing against arterial walls.',
+        causesSi: 'ධමනි බිත්ති මත රුධිරය යොදන පීඩනය දිගුකාලීනව ඉහළ මට්ටමක පැවතීම.',
+        riskEn: 'High salt intake, stress, obesity, alcohol, smoking, aging.',
+        riskSi: 'අධික ලුණු භාවිතය, මානසික ආතතිය, ස්ථූලතාවය, දුම්පානය.',
+        preventionEn: 'Reduce dietary salt, eat potassium-rich foods, exercise, and check BP regularly.',
+        preventionSi: 'ආහාර වලට ලුණු එක් කිරීම අඩු කරන්න, නිතිපතා රුධිර පීඩනය පරීක්ෂා කරන්න.',
+        urgentEn: 'Seek emergency care if BP exceeds 180/120 mmHg or causes chest pain/vision changes.',
+        urgentSi: 'රුධිර පීඩනය 180/120 ඉක්මවා ඇත්නම් හෝ පපුවේ වේදනාව ඇත්නම් වහාම වෛද්‍ය උපදෙස් ගන්න.'
+      },
+      {
+        id: 'kidney_disease',
+        organId: 'kidneys',
+        en: 'Chronic Kidney Disease',
+        si: 'නිදන්ගත වකුගඩු රෝගය',
+        affectedEn: 'Kidneys & Urinary System',
+        affectedSi: 'වකුගඩු සහ මුත්‍රා පද්ධතිය',
+        symptomsEn: 'Swollen ankles/face, foamy urine, reduced urine output, nausea, persistent fatigue.',
+        symptomsSi: 'පාද සහ මුහුණ ඉදිමීම, මුත්‍රා වල පෙන ගතිය, මුත්‍රා ප්‍රමාණය අඩුවීම, තෙහෙට්ටුව.',
+        causesEn: 'Gradual loss of kidney nephron filtering capacity over months or years.',
+        causesSi: 'වකුගඩු වල රුධිරය පෙරීමේ හැකියාව ක්‍රමයෙන් දුර්වල වීම.',
+        riskEn: 'Uncontrolled diabetes, high blood pressure, dehydration, overuse of NSAID painkillers.',
+        riskSi: 'පාලනය නොකළ දියවැඩියාව, අධි රුධිර පීඩනය, අනවශ්‍ය වේදනා නාශක භාවිතය.',
+        preventionEn: 'Drink clean water, manage blood sugar and BP, avoid self-medicating with painkillers.',
+        preventionSi: 'පිරිසිදු ජලය පානය කරන්න, දියවැඩියාව සහ රුධිර පීඩනය පාලනය කරන්න.',
+        urgentEn: 'Seek prompt care for inability to pass urine, severe swelling, or shortness of breath.',
+        urgentSi: 'මුත්‍රා පිට නොවීම හෝ ශරීරය දැඩි ලෙස ඉදිමීම ඇත්නම් වහාම වෛද්‍යවරයෙකු හමුවන්න.'
+      },
+      {
+        id: 'liver_disease',
+        organId: 'liver',
+        en: 'Fatty Liver & Hepatitis',
+        si: 'අක්මාවේ තෙල් තැන්පත් වීම සහ හෙපටයිටිස්',
+        affectedEn: 'Liver',
+        affectedSi: 'අක්මාව',
+        symptomsEn: 'Yellowing of eyes/skin (jaundice), dark urine, right upper belly pain, loss of appetite.',
+        symptomsSi: 'ඇස් සහ සම කහ වීම (සෙංගමාලය), තද පැහැ මුත්‍රා, උදරයේ දකුණු පස වේදනාව.',
+        causesEn: 'Excess fat accumulation in liver cells, viral infections (Hepatitis A/B/C), or alcohol toxicity.',
+        causesSi: 'අක්මා සෛල වල මේදය තැන්පත් වීම, වෛරස් ආසාදන හෝ මත්පැන් භාවිතය.',
+        riskEn: 'Alcohol consumption, high-sugar diet, obesity, unsafe injections.',
+        riskSi: 'මත්පැන් පානය, අධික සීනි සහ තෙල් ආහාර, ස්ථූලතාවය.',
+        preventionEn: 'Avoid alcohol, maintain healthy weight, eat vegetables, and get Hepatitis B vaccination.',
+        preventionSi: 'මත්පැන් වලින් සම්පූර්ණයෙන් වළකින්න, සමබල ආහාර වේලක් ගන්න.',
+        urgentEn: 'Seek urgent medical help for yellowing skin/eyes, confusion, or vomiting blood.',
+        urgentSi: 'ඇස් කහ වීම හෝ ලේ වමනය ඇති වුවහොත් වහාම රෝහල් ගත වන්න.'
+      },
+      {
+        id: 'gastritis',
+        organId: 'stomach',
+        en: 'Gastritis & Peptic Ulcers',
+        si: 'ගැස්ට්‍රයිටිස් සහ ආමාශ තුවාල',
+        affectedEn: 'Stomach & Esophagus',
+        affectedSi: 'ආමාශය සහ අන්නස්‍රෝතය',
+        symptomsEn: 'Burning stomach ache, acid reflux, bloating, belching, nausea after eating.',
+        symptomsSi: 'බඩ දැවිල්ල, උගුරට ඇඹුල් රස ඒම, බඩ පිපීම, ඔක්කාරය.',
+        causesEn: 'Inflammation of the stomach lining from H. pylori bacteria, excess acid, or painkillers.',
+        causesSi: 'ආමාශ බිත්තිය ප්‍රදාහයට පත්වීම, අධික අම්ල ස්‍රාවය හෝ බැක්ටීරියා ආසාදන.',
+        riskEn: 'Skipping meals, spicy/acidic foods, chronic stress, smoking, frequent aspirin/ibuprofen.',
+        riskSi: 'නියමිත වේලාවට ආහාර නොගැනීම, අධික මිරිස්/තෙල් ආහාර, මානසික ආතතිය.',
+        preventionEn: 'Eat small regular meals, stay hydrated, avoid trigger foods, and manage stress.',
+        preventionSi: 'නියමිත වේලාවට ආහාර ගන්න, මිරිස් සහ තෙල් අඩු කරන්න, මානසික සුවය පවත්වා ගන්න.',
+        urgentEn: 'Seek immediate care for black tarry stools, vomiting blood, or severe sharp abdominal pain.',
+        urgentSi: 'කළු පැහැති මළපහ පිටවීම හෝ ලේ වමනය ඇත්නම් වහාම වෛද්‍ය ප්‍රතිකාර ලබා ගන්න.'
+      },
+      {
+        id: 'migraine',
+        organId: 'brain',
+        en: 'Migraine',
+        si: 'ඉරුවාරදය (Migraine)',
+        affectedEn: 'Brain & Cranial Nerves',
+        affectedSi: 'මොළය සහ ස්නායු පද්ධතිය',
+        symptomsEn: 'Throbbing one-sided headache, nausea, sensitivity to light and sound, visual aura.',
+        symptomsSi: 'හිසේ එක් පැත්තක ඇතිවන තදබල වේදනාව, ඔක්කාරය, ආලෝකයට සහ ශබ්දයට අසංවේදී බව.',
+        causesEn: 'Neurovascular changes in brain signaling and blood flow.',
+        causesSi: 'මොළයේ ස්නායු සංඥා සහ රුධිර වාහිනී වල ඇතිවන තාවකාලික වෙනස්කම්.',
+        riskEn: 'Sleep deprivation, dehydration, stress, bright glare, skipped meals.',
+        riskSi: 'නින්ද මඳකම, විජලනය, මානසික ආතතිය, අධික හිරු එළිය.',
+        preventionEn: 'Keep a consistent sleep schedule, drink water, and identify personal migraine triggers.',
+        preventionSi: 'නියමිත වේලාවට නිදාගන්න, ප්‍රමාණවත් ජලය පානය කරන්න.',
+        urgentEn: 'Seek emergency care for a sudden "thunderclap" headache, fever, stiff neck, or slurred speech.',
+        urgentSi: 'හදිසි දරුණු හිසරදයක් සමඟ උණ හෝ කථනයේ අපහසුවක් ඇත්නම් වහාම රෝහල් ගත වන්න.'
+      },
+      {
+        id: 'arthritis',
+        organId: 'joints',
+        en: 'Arthritis',
+        si: 'ආතරයිටිස් (සන්ධි ප්‍රදාහය)',
+        affectedEn: 'Joints & Bones',
+        affectedSi: 'සන්ධි සහ අස්ථි',
+        symptomsEn: 'Joint pain, morning stiffness, swelling, warmth, reduced flexibility.',
+        symptomsSi: 'සන්ධි වේදනාව, උදෑසන සන්ධි තද ගතිය, ඉදිමීම, චලනය අපහසු වීම.',
+        causesEn: 'Cartilage wear-and-tear (Osteoarthritis) or autoimmune joint inflammation (Rheumatoid).',
+        causesSi: 'සන්ධි කාටිලේජ ගෙවී යාම හෝ ප්‍රතිශක්තිකරණ පද්ධතිය සන්ධි වලට බලපෑම් කිරීම.',
+        riskEn: 'Aging, excess body weight, prior joint injuries, genetics.',
+        riskSi: 'වයස්ගත වීම, අධික ශරීර බර, පැරණි සන්ධි අනතුරු.',
+        preventionEn: 'Maintain healthy weight, engage in swimming/walking, and eat anti-inflammatory omega-3 foods.',
+        preventionSi: 'ශරීර බර පාලනය කරන්න, පිහිනීම හෝ ඇවිදීම වැනි ව්‍යායාම කරන්න.',
+        urgentEn: 'Consult a doctor if a joint becomes hot, red, severely swollen, or accompanied by fever.',
+        urgentSi: 'සන්ධියක් රතු වී උණුසුම්ව ඉදිමී උණ ඇත්නම් වෛද්‍ය උපදෙස් ලබා ගන්න.'
+      },
+      {
+        id: 'anemia',
+        organId: 'blood_vessels',
+        en: 'Anemia (Iron Deficiency)',
+        si: 'රක්තහීනතාවය (Anemia)',
+        affectedEn: 'Blood Vessels, Heart & Bone Marrow',
+        affectedSi: 'රුධිරය, හදවත සහ ඇටමිදුළු',
+        symptomsEn: 'Extreme fatigue, pale skin/nails, dizziness, cold hands, fast heartbeat.',
+        symptomsSi: 'අධික තෙහෙට්ටුව, සම සහ නියපොතු සුදුමැලි වීම, කරකැවිල්ල, හෘද ස්පන්දනය වේගවත් වීම.',
+        causesEn: 'Low red blood cell count or hemoglobin reducing oxygen delivery to body tissues.',
+        causesSi: 'රුධිරයේ හිමොග්ලොබින් මට්ටම අඩුවීම නිසා පටක වලට ඔක්සිජන් ලැබීම අඩුවීම.',
+        riskEn: 'Iron/Vitamin B12 deficiency, heavy menstrual bleeding, poor nutrition.',
+        riskSi: 'යකඩ සහ විටමින් B12 ඌනතාවය, පෝෂණ ඌනතා.',
+        preventionEn: 'Eat iron-rich greens (gotukola, spinach), legumes, and Vitamin C to boost iron absorption.',
+        preventionSi: 'පලා වර්ග (ගොටුකොළ, නිවිති), පියලි ඇට සහ විටමින් C බහුල ආහාර ගන්න.',
+        urgentEn: 'Seek medical evaluation for persistent weakness, fainting, or shortness of breath on mild exertion.',
+        urgentSi: 'සුළු වැඩකදී පවා හුස්ම ගැනීමේ අපහසුව හෝ ක්ලාන්තය ඇත්නම් වෛද්‍යවරයෙකු හමුවන්න.'
+      },
+      {
+        id: 'common_infections',
+        organId: 'immune_system',
+        en: 'Common Viral & Bacterial Infections',
+        si: 'බහුල වෛරස් සහ බැක්ටීරියා ආසාදන',
+        affectedEn: 'Immune & Respiratory Systems',
+        affectedSi: 'ප්‍රතිශක්තිකරණ සහ ශ්වසන පද්ධති',
+        symptomsEn: 'Fever, sore throat, cough, body aches, fatigue, nasal congestion.',
+        symptomsSi: 'උණ, උගුරේ වේදනාව, කැස්ස, ඇඟපත වේදනාව, සෙම්ප්‍රතිශ්‍යාව.',
+        causesEn: 'Pathogenic viruses (influenza, rhinovirus) or bacteria entering through airways or food.',
+        causesSi: 'ශ්වසන මාර්ගය හෝ ආහාර හරහා ශරීරයට ඇතුළු වන වෛරස් හා බැක්ටීරියා.',
+        riskEn: 'Poor hand hygiene, crowded unventilated spaces, weakened immunity.',
+        riskSi: 'අත් පිරිසිදුව නොතබා ගැනීම, ප්‍රතිශක්තිය අඩුවීම.',
+        preventionEn: 'Wash hands frequently with soap, stay hydrated, sleep well, and keep vaccinations updated.',
+        preventionSi: 'නිතර සබන් යොදා අත් සෝදන්න, පිරිසිදු ජලය පානය කරන්න, ප්‍රතිශක්තිය වර්ධනය කර ගන්න.',
+        urgentEn: 'Seek medical care for high fever >3 days, difficulty breathing, persistent vomiting, or confusion.',
+        urgentSi: 'දින 3කට වඩා තද උණ පවතී නම් හෝ හුස්ම ගැනීමේ අපහසුවක් ඇත්නම් වහාම වෛද්‍ය ප්‍රතිකාර ගන්න.'
+      }
+    ];
+
+    /* ==========================================================================
+       INTERESTING FACTS, WHY LEARN ANATOMY & QUIZ DATA
+       ========================================================================== */
+    const BODY_FACTS = [
+      { en: 'Your heart beats roughly 100,000 times every day, pumping about 7,500 liters of blood.', si: 'ඔබේ හදවත දිනකට 100,000 වතාවක් පමණ ස්පන්දනය වෙමින් රුධිරය ලීටර් 7,500ක් පොම්ප කරයි.' },
+      { en: 'Human bone is ounce-for-ounce stronger than steel, yet light enough to allow agile movement.', si: 'මිනිස් අස්ථි වානේ වලටත් වඩා ශක්තිමත් වන අතර චලනයට පහසු වන සේ සැහැල්ලුය.' },
+      { en: 'Your brain contains ~86 billion neurons that transmit signals at up to 430 km/h.', si: 'ඔබේ මොළයේ නියුරෝන බිලියන 86ක් පමණ ඇති අතර ඒවා පැයට කි.මී. 430ක වේගයෙන් සංඥා යවයි.' },
+      { en: 'The human body completely replaces its outer skin layer every 27 to 30 days.', si: 'සෑම දින 27ත් 30ත් අතර කාලයකදී මිනිස් සමේ පිටත ස්ථරය සම්පූර්ණයෙන්ම අලුත් වේ.' },
+      { en: 'Your small intestine is ~6 meters long and has an absorptive surface area the size of a studio apartment.', si: 'කුඩා අන්ත්‍රය මීටර් 6ක් පමණ දිග වන අතර එහි පෝෂ්‍ය පදාර්ථ උරා ගැනීමේ පෘෂ්ඨය ඉතා විශාලය.' },
+      { en: 'The cornea of your eye is the only living tissue in the human body with no blood vessels.', si: 'ඇසේ කළු ඉංගිරියාව (Cornea) රුධිර වාහිනී නොමැති ශරීරයේ එකම ජීවී පටකයයි.' },
+    ];
+
+    const WHY_LEARN_ITEMS = [
+      { en: 'Empower Personal Health: Understand how your organs work so you can make smarter nutrition and fitness choices.', si: 'පෞද්ගලික සෞඛ්‍යය රැක ගැනීම: අවයව ක්‍රියා කරන ආකාරය දැන ගැනීමෙන් නිවැරදි ආහාර සහ ව්‍යායාම තෝරා ගත හැකිය.' },
+      { en: 'Early Symptom Recognition: Spot warning signs early and communicate clearly with healthcare professionals.', si: 'රෝග ලක්ෂණ කලින් හඳුනා ගැනීම: රෝග ලක්ෂණ මුල් අවධියේදීම හඳුනාගෙන වෛද්‍ය උපදෙස් ලබා ගත හැකිය.' },
+      { en: 'STEM & Medical Readiness: Build a strong visual foundation for biology, nursing, medicine, and sports science.', si: 'විද්‍යා හා වෛද්‍ය අධ්‍යාපනය: ජීව විද්‍යාව, හෙද සේවය සහ වෛද්‍ය විද්‍යාව හැදෑරීමට ශක්තිමත් පදනමක් ලැබේ.' },
+    ];
+
+    const QUIZ_QUESTIONS = [
+      {
+        qEn: 'Which organ is the only visceral organ capable of regenerating itself even if 70% is removed?',
+        qSi: '70%ක් ඉවත් කළද නැවත වර්ධනය වීමේ (Regeneration) හැකියාව ඇති එකම අභ්‍යන්තර අවයවය කුමක්ද?',
+        optsEn: ['Heart', 'Liver', 'Pancreas', 'Stomach'],
+        optsSi: ['හදවත', 'අක්මාව', 'අග්න්‍යාශය', 'ආමාශය'],
+        ans: 1,
+        expEn: 'The Liver can regenerate back to full size thanks to rapid hepatocyte cell division.',
+        expSi: 'අක්මාවට (Liver) නැවත සම්පූර්ණ ප්‍රමාණයට වර්ධනය වීමේ විශ්මිත හැකියාවක් ඇත.'
+      },
+      {
+        qEn: 'Where is the smallest bone in the human body (the stapes) located?',
+        qSi: 'මිනිස් සිරුරේ කුඩාම අස්ථිය වන ධරණකය (Stapes) පිහිටා ඇත්තේ කොහේද?',
+        optsEn: ['Middle Ear', 'Little Finger', 'Nose', 'Foot'],
+        optsSi: ['මැද කන', 'සුළැඟිල්ල', 'නාසය', 'පාදය'],
+        ans: 0,
+        expEn: 'The stapes in the middle ear measures only about 3 millimeters long.',
+        expSi: 'මැද කනේ පිහිටි ධරණකය (Stapes) මිලිමීටර් 3ක් පමණ කුඩා අස්ථියකි.'
+      },
+      {
+        qEn: 'Which dual-role organ produces both digestive enzymes and the hormone insulin?',
+        qSi: 'ආහාර ජීර්ණ එන්සයිම සහ ඉන්සියුලින් හෝමෝනය යන දෙකම නිපදවන අවයවය කුමක්ද?',
+        optsEn: ['Gallbladder', 'Kidneys', 'Pancreas', 'Appendix'],
+        optsSi: ['පිත්තාශය', 'වකුගඩු', 'අග්න්‍යාශය', 'උණ්ඩුක පුච්ඡය'],
+        ans: 2,
+        expEn: 'The Pancreas belongs to both the digestive and endocrine systems.',
+        expSi: 'අග්න්‍යාශය (Pancreas) ආහාර ජීර්ණ සහ අන්තරාසර්ග පද්ධති දෙකටම අයත් වේ.'
+      },
+      {
+        qEn: 'How many pairs of ribs protect the human thoracic cavity?',
+        qSi: 'මිනිසාගේ පපු කුහරය ආරක්ෂා කරන ඉළ ඇට යුගල ගණන කීයද?',
+        optsEn: ['10 pairs', '12 pairs', '14 pairs', '8 pairs'],
+        optsSi: ['යුගල 10', 'යුගල 12', 'යුගල 14', 'යුගල 8'],
+        ans: 1,
+        expEn: 'Both males and females have 12 pairs (24 total) of ribs.',
+        expSi: 'පුරුෂ සහ ස්ත්‍රී දෙපාර්ශවයටම ඉළ ඇට යුගල 12ක් (මුළු 24ක්) ඇත.'
+      },
+      {
+        qEn: 'Approximately what percentage of the body’s oxygen does the human brain consume?',
+        qSi: 'මිනිස් මොළය ශරීරයේ මුළු ඔක්සිජන් ප්‍රමාණයෙන් කොපමණ ප්‍රතිශතයක් භාවිතා කරයිද?',
+        optsEn: ['5%', '10%', '20%', '50%'],
+        optsSi: ['5%', '10%', '20%', '50%'],
+        ans: 2,
+        expEn: 'Despite being 2% of body weight, the brain uses 20% of the body’s oxygen and energy.',
+        expSi: 'මොළය ශරීර බරින් 2%ක් වුවද ඔක්සිජන් වලින් 20%ක් භාවිතා කරයි.'
+      },
+      {
+        qEn: 'Which microscopic structures in the lungs perform oxygen and carbon dioxide exchange?',
+        qSi: 'පෙනහළු තුළ ඔක්සිජන් සහ කාබන් ඩයොක්සයිඩ් හුවමාරුව සිදු කරන කුඩා වායු කෝෂ මොනවාද?',
+        optsEn: ['Nephrons', 'Alveoli', 'Villi', 'Neurons'],
+        optsSi: ['නෙෆ්‍රෝන', 'ගර්ත (Alveoli)', 'අංගුලිකා', 'නියුරෝන'],
+        ans: 1,
+        expEn: 'Around 480 million alveoli in the lungs transfer oxygen directly into blood capillaries.',
+        expSi: 'පෙනහළු තුළ ඇති ගර්ත (Alveoli) මිලියන 480ක් පමණ වායු හුවමාරුව සිදු කරයි.'
+      }
+    ];
+
+    /* ==========================================================================
+       MODULE 4: INTERACTIVE 3D HUMAN BODY ENGINE (Three.js + OrbitControls + GSAP)
+       ========================================================================== */
+    let scene, camera, renderer, controls, raycaster, mouse;
+    let bodyRootGroup, skinShellGroup, organsGroup;
+    let organMeshMap = {}; // organId -> THREE.Mesh or THREE.Group
+    let selectableMeshes = [];
+    let selectedOrganId = 'heart';
+    let hoveredOrganId = null;
+    let activeSystemId = 'all';
+    let currentGender = 'male';
+    let autoRotateEnabled = false;
+    let clock = new THREE.Clock();
+
+    function initThreeEngine() {
+      const container = document.getElementById('three-mount');
+      if (!container || typeof THREE === 'undefined') return;
+
+      // 1. Scene & Lighting
+      scene = new THREE.Scene();
+
+      const width = container.clientWidth || 500;
+      const height = container.clientHeight || 640;
+      camera = new THREE.PerspectiveCamera(42, width / height, 0.1, 100);
+      camera.position.set(0, 1.05, 3.15);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(width, height);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      container.appendChild(renderer.domElement);
+
+      // OrbitControls for 360° Drag & Zoom
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.06;
+      controls.target.set(0, 0.92, 0);
+      controls.minDistance = 0.9;
+      controls.maxDistance = 5.2;
+      controls.maxPolarAngle = Math.PI * 0.92;
+
+      // Studio Medical Hologram Lights
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.65);
+      scene.add(ambientLight);
+
+      const cyanKeyLight = new THREE.PointLight(0x00f0ff, 1.4, 12);
+      cyanKeyLight.position.set(2.2, 2.4, 2.5);
+      scene.add(cyanKeyLight);
+
+      const purpleRimLight = new THREE.PointLight(0x9d4edd, 1.2, 12);
+      purpleRimLight.position.set(-2.4, 1.6, -2.2);
+      scene.add(purpleRimLight);
+
+      const frontFill = new THREE.DirectionalLight(0xffffff, 0.75);
+      frontFill.position.set(0, 2, 3);
+      scene.add(frontFill);
+
+      // Futuristic Floor Pedestal Rings
+      const ringGeo1 = new THREE.RingGeometry(0.62, 0.66, 64);
+      const ringMat1 = new THREE.MeshBasicMaterial({ color: 0x00f0ff, side: THREE.DoubleSide, transparent: true, opacity: 0.45 });
+      const floorRing1 = new THREE.Mesh(ringGeo1, ringMat1);
+      floorRing1.rotation.x = -Math.PI / 2;
+      floorRing1.position.y = -0.22;
+      scene.add(floorRing1);
+
+      const ringGeo2 = new THREE.RingGeometry(0.82, 0.84, 64);
+      const ringMat2 = new THREE.MeshBasicMaterial({ color: 0x9d4edd, side: THREE.DoubleSide, transparent: true, opacity: 0.3 });
+      const floorRing2 = new THREE.Mesh(ringGeo2, ringMat2);
+      floorRing2.rotation.x = -Math.PI / 2;
+      floorRing2.position.y = -0.22;
+      scene.add(floorRing2);
+
+      // Root Groups
+      bodyRootGroup = new THREE.Group();
+      skinShellGroup = new THREE.Group();
+      organsGroup = new THREE.Group();
+      bodyRootGroup.add(skinShellGroup);
+      bodyRootGroup.add(organsGroup);
+      scene.add(bodyRootGroup);
+
+      // Build Translucent Outer Body Shell & Modular 3D Organs
+      buildTranslucentBodyShell('male');
+      buildModularOrgans();
+
+      // Raycaster for Hover & Click Selection
+      raycaster = new THREE.Raycaster();
+      mouse = new THREE.Vector2();
+
+      renderer.domElement.addEventListener('pointermove', onCanvasPointerMove);
+      renderer.domElement.addEventListener('click', onCanvasClick);
+      window.addEventListener('resize', onWindowResize);
+
+      // Highlight default organ ('heart') without jarring zoom on first load
+      highlightOrganMesh('heart', false);
+
+      // Start Render Loop
+      animate3D();
+    }
+
+    // Builds the translucent anatomical outer body silhouette (Male / Female proportions)
+    function buildTranslucentBodyShell(gender) {
+      while (skinShellGroup.children.length > 0) {
+        skinShellGroup.remove(skinShellGroup.children[0]);
+      }
+
+      const opacityVal = (document.getElementById('shell-opacity-slider')?.value || 24) / 100;
+      const shellMat = new THREE.MeshPhysicalMaterial({
+        color: gender === 'female' ? 0x38bdf8 : 0x00f0ff,
+        emissive: 0x004477,
+        emissiveIntensity: 0.35,
+        transparent: true,
+        opacity: opacityVal,
+        roughness: 0.25,
+        metalness: 0.1,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+      });
+
+      const wireMat = new THREE.MeshBasicMaterial({
+        color: 0x00f0ff,
+        wireframe: true,
+        transparent: true,
+        opacity: Math.min(opacityVal * 0.35, 0.12),
+        depthWrite: false,
+      });
+
+      const addLimb = (geo, x, y, z, rx = 0, ry = 0, rz = 0, sx = 1, sy = 1, sz = 1) => {
+        const mesh = new THREE.Mesh(geo, shellMat);
+        mesh.position.set(x, y, z);
+        mesh.rotation.set(rx, ry, rz);
+        mesh.scale.set(sx, sy, sz);
+        skinShellGroup.add(mesh);
+
+        const wire = new THREE.Mesh(geo, wireMat);
+        wire.position.copy(mesh.position);
+        wire.rotation.copy(mesh.rotation);
+        wire.scale.copy(mesh.scale);
+        skinShellGroup.add(wire);
+      };
+
+      const shoulderW = gender === 'female' ? 0.18 : 0.22;
+      const waistW = gender === 'female' ? 0.125 : 0.155;
+      const hipW = gender === 'female' ? 0.175 : 0.155;
+
+      // Head & Neck
+      addLimb(new THREE.SphereGeometry(0.135, 28, 28), 0, 1.54, 0, 0, 0, 0, 0.92, 1.12, 0.98);
+      addLimb(new THREE.CylinderGeometry(0.055, 0.065, 0.14, 20), 0, 1.38, 0);
+
+      // Upper Chest / Torso
+      addLimb(new THREE.CylinderGeometry(shoulderW, waistW, 0.42, 28), 0, 1.13, 0, 0, 0, 0, 1, 1, 0.65);
+      // Abdomen / Pelvis
+      addLimb(new THREE.CylinderGeometry(waistW, hipW, 0.34, 28), 0, 0.76, 0, 0, 0, 0, 1, 1, 0.68);
+
+      // Left & Right Arms + Hands
+      [-1, 1].forEach((dir) => {
+        const xOff = dir * (shoulderW + 0.045);
+        addLimb(new THREE.CylinderGeometry(0.048, 0.038, 0.32, 18), xOff + dir * 0.02, 1.14, 0, 0, 0, dir * 0.12);
+        addLimb(new THREE.CylinderGeometry(0.036, 0.028, 0.29, 18), xOff + dir * 0.055, 0.85, 0.02, -0.08, 0, dir * 0.08);
+        addLimb(new THREE.SphereGeometry(0.038, 16, 16), xOff + dir * 0.07, 0.68, 0.03, 0, 0, 0, 0.7, 1.2, 0.5);
+      });
+
+      // Left & Right Legs + Feet
+      [-1, 1].forEach((dir) => {
+        const legX = dir * 0.095;
+        addLimb(new THREE.CylinderGeometry(0.078, 0.056, 0.42, 20), legX, 0.39, 0);
+        addLimb(new THREE.CylinderGeometry(0.054, 0.04, 0.42, 20), legX, -0.01, 0);
+        addLimb(new THREE.BoxGeometry(0.075, 0.05, 0.16), legX, -0.19, 0.04);
+      });
+    }
+
+    // Builds modular, anatomically positioned, clickable 3D meshes for all 36 body parts
+    function buildModularOrgans() {
+      while (organsGroup.children.length > 0) {
+        organsGroup.remove(organsGroup.children[0]);
+      }
+      organMeshMap = {};
+      selectableMeshes = [];
+
+      const registerOrgan = (id, mesh) => {
+        mesh.userData.organId = id;
+        mesh.traverse((child) => {
+          if (child.isMesh) {
+            child.userData.organId = id;
+            selectableMeshes.push(child);
+          }
+        });
+        organsGroup.add(mesh);
+        organMeshMap[id] = mesh;
+      };
+
+      const makeMat = (hex, opacity = 0.92) =>
+        new THREE.MeshStandardMaterial({
+          color: hex,
+          emissive: hex,
+          emissiveIntensity: 0.28,
+          roughness: 0.32,
+          metalness: 0.15,
+          transparent: opacity < 1,
+          opacity,
+        });
+
+      // 1. Skull (translucent wireframe/shell around brain)
+      const skullMesh = new THREE.Mesh(
+        new THREE.SphereGeometry(0.118, 24, 24),
+        new THREE.MeshStandardMaterial({
+          color: 0xe2e8f0,
+          emissive: 0x334155,
+          emissiveIntensity: 0.25,
+          transparent: true,
+          opacity: 0.35,
+          roughness: 0.4,
+        })
+      );
+      skullMesh.position.set(0, 1.56, 0.005);
+      skullMesh.scale.set(0.9, 1.05, 0.98);
+      registerOrgan('skull', skullMesh);
+
+      // 2. Brain (two hemispheres)
+      const brainGroup = new THREE.Group();
+      const brainMat = makeMat(0xc084fc, 0.96);
+      const hemiL = new THREE.Mesh(new THREE.SphereGeometry(0.078, 24, 24), brainMat);
+      hemiL.position.set(-0.028, 1.57, -0.005);
+      hemiL.scale.set(0.75, 0.85, 1.15);
+      const hemiR = hemiL.clone();
+      hemiR.position.x = 0.028;
+      brainGroup.add(hemiL, hemiR);
+      registerOrgan('brain', brainGroup);
+
+      // 3. Eyes (Left & Right)
+      const eyesGroup = new THREE.Group();
+      const eyeMat = makeMat(0x38bdf8, 1);
+      [-0.036, 0.036].forEach((x) => {
+        const eye = new THREE.Mesh(new THREE.SphereGeometry(0.017, 16, 16), eyeMat);
+        eye.position.set(x, 1.535, 0.105);
+        eyesGroup.add(eye);
+      });
+      registerOrgan('eyes', eyesGroup);
+
+      // 4. Ears (Left & Right)
+      const earsGroup = new THREE.Group();
+      const earMat = makeMat(0xfbbf24, 0.95);
+      [-0.122, 0.122].forEach((x) => {
+        const ear = new THREE.Mesh(new THREE.TorusGeometry(0.022, 0.008, 10, 20), earMat);
+        ear.position.set(x, 1.525, 0);
+        ear.rotation.y = Math.PI / 2;
+        earsGroup.add(ear);
+      });
+      registerOrgan('ears', earsGroup);
+
+      // 5. Nose
+      const noseMesh = new THREE.Mesh(new THREE.ConeGeometry(0.018, 0.042, 16), makeMat(0x38bdf8, 0.95));
+      noseMesh.position.set(0, 1.495, 0.122);
+      noseMesh.rotation.x = 0.35;
+      registerOrgan('nose', noseMesh);
+
+      // 6. Mouth, 7. Tongue, 8. Teeth
+      const mouthMesh = new THREE.Mesh(new THREE.TorusGeometry(0.024, 0.006, 10, 20, Math.PI), makeMat(0xfb7185, 0.95));
+      mouthMesh.position.set(0, 1.45, 0.114);
+      mouthMesh.rotation.z = Math.PI;
+      registerOrgan('mouth', mouthMesh);
+
+      const tongueMesh = new THREE.Mesh(new THREE.SphereGeometry(0.016, 14, 14), makeMat(0xf43f5e, 0.98));
+      tongueMesh.position.set(0, 1.442, 0.104);
+      tongueMesh.scale.set(0.9, 0.45, 1.3);
+      registerOrgan('tongue', tongueMesh);
+
+      const teethMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.012, 16, 1, true, -1.1, 2.2), makeMat(0xffffff, 0.98));
+      teethMesh.position.set(0, 1.452, 0.105);
+      registerOrgan('teeth', teethMesh);
+
+      // 9. Endocrine System (Thyroid & Pituitary nodes)
+      const endoGroup = new THREE.Group();
+      const endoMat = makeMat(0xd946ef, 0.95);
+      const thyroid = new THREE.Mesh(new THREE.TorusGeometry(0.026, 0.009, 12, 20, Math.PI * 1.2), endoMat);
+      thyroid.position.set(0, 1.37, 0.042);
+      thyroid.rotation.z = Math.PI * 0.9;
+      const pituitary = new THREE.Mesh(new THREE.SphereGeometry(0.014, 12, 12), endoMat);
+      pituitary.position.set(0, 1.51, 0.02);
+      endoGroup.add(thyroid, pituitary);
+      registerOrgan('endocrine_system', endoGroup);
+
+      // 10. Esophagus
+      const esophMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.36, 14), makeMat(0xf59e0b, 0.92));
+      esophMesh.position.set(0, 1.21, -0.015);
+      registerOrgan('esophagus', esophMesh);
+
+      // 11. Heart (Anatomical tilted heart with pulse animation)
+      const heartGroup = new THREE.Group();
+      const heartMat = makeMat(0xf43f5e, 1);
+      const heartMain = new THREE.Mesh(new THREE.SphereGeometry(0.056, 24, 24), heartMat);
+      heartMain.scale.set(0.92, 1.18, 0.85);
+      heartMain.rotation.z = 0.35;
+      const aorta = new THREE.Mesh(new THREE.TorusGeometry(0.026, 0.009, 12, 20, Math.PI), heartMat);
+      aorta.position.set(-0.008, 0.055, 0);
+      heartGroup.add(heartMain, aorta);
+      heartGroup.position.set(0.028, 1.15, 0.035);
+      registerOrgan('heart', heartGroup);
+
+      // 12. Lungs (Left & Right Lobes)
+      const lungsGroup = new THREE.Group();
+      const lungMat = makeMat(0x38bdf8, 0.72);
+      const lungL = new THREE.Mesh(new THREE.SphereGeometry(0.078, 22, 22), lungMat);
+      lungL.position.set(0.082, 1.16, 0.01);
+      lungL.scale.set(0.78, 1.48, 0.85);
+      const lungR = new THREE.Mesh(new THREE.SphereGeometry(0.078, 22, 22), lungMat);
+      lungR.position.set(-0.082, 1.16, 0.01);
+      lungR.scale.set(0.78, 1.48, 0.85);
+      lungsGroup.add(lungL, lungR);
+      registerOrgan('lungs', lungsGroup);
+
+      // 13. Ribs (Curved Thoracic Rib Rings)
+      const ribsGroup = new THREE.Group();
+      const ribMat = makeMat(0xe2e8f0, 0.65);
+      for (let i = 0; i < 5; i++) {
+        const y = 1.24 - i * 0.044;
+        const r = 0.135 + Math.sin((i / 4) * Math.PI) * 0.022;
+        const ribRing = new THREE.Mesh(new THREE.TorusGeometry(r, 0.006, 8, 28, Math.PI * 1.45), ribMat);
+        ribRing.position.set(0, y, 0.005);
+        ribRing.rotation.x = Math.PI / 2;
+        ribRing.rotation.z = -Math.PI * 0.22;
+        ribRing.scale.set(1, 0.68, 1);
+        ribsGroup.add(ribRing);
+      }
+      registerOrgan('ribs', ribsGroup);
+
+      // 14. Liver
+      const liverMesh = new THREE.Mesh(new THREE.SphereGeometry(0.072, 22, 22), makeMat(0xb45309, 0.95));
+      liverMesh.position.set(-0.055, 0.97, 0.038);
+      liverMesh.scale.set(1.35, 0.72, 0.82);
+      liverMesh.rotation.z = -0.22;
+      registerOrgan('liver', liverMesh);
+
+      // 15. Gallbladder
+      const gallMesh = new THREE.Mesh(new THREE.SphereGeometry(0.02, 14, 14), makeMat(0x10b981, 0.98));
+      gallMesh.position.set(-0.055, 0.925, 0.055);
+      gallMesh.scale.set(0.8, 1.35, 0.8);
+      registerOrgan('gallbladder', gallMesh);
+
+      // 16. Stomach
+      const stomachMesh = new THREE.Mesh(new THREE.SphereGeometry(0.056, 20, 20), makeMat(0xec4899, 0.94));
+      stomachMesh.position.set(0.055, 0.95, 0.032);
+      stomachMesh.scale.set(0.95, 1.25, 0.8);
+      stomachMesh.rotation.z = 0.45;
+      registerOrgan('stomach', stomachMesh);
+
+      // 17. Pancreas
+      const pancreasMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.022, 0.11, 14), makeMat(0xa855f7, 0.95));
+      pancreasMesh.position.set(0.01, 0.91, 0.005);
+      pancreasMesh.rotation.z = Math.PI / 2.2;
+      registerOrgan('pancreas', pancreasMesh);
+
+      // 18. Small Intestine
+      const smallIntGroup = new THREE.Group();
+      const siMat = makeMat(0xfacc15, 0.94);
+      for (let i = 0; i < 4; i++) {
+        const coil = new THREE.Mesh(new THREE.TorusGeometry(0.042, 0.013, 10, 22), siMat);
+        coil.position.set((i % 2 === 0 ? -0.015 : 0.015), 0.81 - i * 0.024, 0.035);
+        coil.rotation.x = Math.PI / 2.4;
+        smallIntGroup.add(coil);
+      }
+      registerOrgan('small_intestine', smallIntGroup);
+
+      // 19. Large Intestine (Outer Colon Frame)
+      const largeIntGroup = new THREE.Group();
+      const liMat = makeMat(0xd97706, 0.92);
+      const ascColon = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.16, 14), liMat);
+      ascColon.position.set(-0.088, 0.77, 0.032);
+      const transColon = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.18, 14), liMat);
+      transColon.position.set(0, 0.85, 0.036);
+      transColon.rotation.z = Math.PI / 2;
+      const descColon = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.16, 14), liMat);
+      descColon.position.set(0.088, 0.77, 0.032);
+      largeIntGroup.add(ascColon, transColon, descColon);
+      registerOrgan('large_intestine', largeIntGroup);
+
+      // 20. Appendix
+      const appendixMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.006, 0.042, 10), makeMat(0x22c55e, 1));
+      appendixMesh.position.set(-0.095, 0.675, 0.035);
+      appendixMesh.rotation.z = 0.5;
+      registerOrgan('appendix', appendixMesh);
+
+      // 21. Kidneys (Left & Right)
+      const kidneysGroup = new THREE.Group();
+      const kidMat = makeMat(0x14b8a6, 0.96);
+      [-0.068, 0.068].forEach((x, idx) => {
+        const kid = new THREE.Mesh(new THREE.SphereGeometry(0.032, 18, 18), kidMat);
+        kid.position.set(x, idx === 0 ? 0.88 : 0.90, -0.038);
+        kid.scale.set(0.75, 1.35, 0.72);
+        kidneysGroup.add(kid);
+      });
+      registerOrgan('kidneys', kidneysGroup);
+
+      // 22. Ureters
+      const uretersGroup = new THREE.Group();
+      const urMat = makeMat(0x2dd4bf, 0.92);
+      [-0.048, 0.048].forEach((x) => {
+        const ur = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.24, 10), urMat);
+        ur.position.set(x, 0.75, -0.015);
+        ur.rotation.z = x < 0 ? -0.14 : 0.14;
+        ur.rotation.x = 0.18;
+        uretersGroup.add(ur);
+      });
+      registerOrgan('ureters', uretersGroup);
+
+      // 23. Bladder
+      const bladderMesh = new THREE.Mesh(new THREE.SphereGeometry(0.034, 18, 18), makeMat(0x0ea5e9, 0.95));
+      bladderMesh.position.set(0, 0.63, 0.032);
+      registerOrgan('bladder', bladderMesh);
+
+      // 24. Reproductive System
+      const reproMesh = new THREE.Mesh(new THREE.OctahedronGeometry(0.032, 1), makeMat(0xec4899, 0.95));
+      reproMesh.position.set(0, 0.57, 0.01);
+      registerOrgan('reproductive_system', reproMesh);
+
+      // 25. Spine & 26. Nervous System (Spinal Cord)
+      const spineGroup = new THREE.Group();
+      const spineMat = makeMat(0xe2e8f0, 0.9);
+      for (let i = 0; i < 14; i++) {
+        const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.028, 12), spineMat);
+        disc.position.set(0, 1.36 - i * 0.052, -0.068);
+        spineGroup.add(disc);
+      }
+      registerOrgan('spine', spineGroup);
+
+      const nervousCord = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.007, 0.76, 12), makeMat(0xa855f7, 0.96));
+      nervousCord.position.set(0, 1.04, -0.052);
+      registerOrgan('nervous_system', nervousCord);
+
+      // 27. Immune System (Spleen & Thymus Nodes)
+      const immuneGroup = new THREE.Group();
+      const immMat = makeMat(0x22c55e, 0.95);
+      const thymus = new THREE.Mesh(new THREE.SphereGeometry(0.024, 14, 14), immMat);
+      thymus.position.set(0, 1.25, 0.048);
+      const spleen = new THREE.Mesh(new THREE.SphereGeometry(0.032, 14, 14), immMat);
+      spleen.position.set(0.095, 0.95, -0.015);
+      immuneGroup.add(thymus, spleen);
+      registerOrgan('immune_system', immuneGroup);
+
+      // 28. Blood Vessels (Aorta & Vena Cava Trunk)
+      const vesselGroup = new THREE.Group();
+      const vesMat = makeMat(0xef4444, 0.88);
+      const mainAorta = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.009, 0.54, 12), vesMat);
+      mainAorta.position.set(-0.015, 0.92, -0.022);
+      const venaCava = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.54, 12), makeMat(0x3b82f6, 0.88));
+      venaCava.position.set(0.018, 0.92, -0.022);
+      vesselGroup.add(mainAorta, venaCava);
+      registerOrgan('blood_vessels', vesselGroup);
+
+      // 29. Muscles (Biceps / Deltoid Highlights), 30. Arms, 31. Hands
+      const musclesGroup = new THREE.Group();
+      const musMat = makeMat(0xf97316, 0.85);
+      [-1, 1].forEach((dir) => {
+        const bicep = new THREE.Mesh(new THREE.SphereGeometry(0.042, 16, 16), musMat);
+        bicep.position.set(dir * 0.24, 1.15, 0.01);
+        bicep.scale.set(0.85, 2.2, 0.85);
+        musclesGroup.add(bicep);
+      });
+      registerOrgan('muscles', musclesGroup);
+
+      const armsGroup = new THREE.Group();
+      const armMat = makeMat(0xfb923c, 0.85);
+      [-1, 1].forEach((dir) => {
+        const forearm = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.018, 0.26, 14), armMat);
+        forearm.position.set(dir * 0.275, 0.85, 0.02);
+        forearm.rotation.z = dir * 0.08;
+        armsGroup.add(forearm);
+      });
+      registerOrgan('arms', armsGroup);
+
+      const handsGroup = new THREE.Group();
+      const handMat = makeMat(0xfdba74, 0.92);
+      [-1, 1].forEach((dir) => {
+        const hand = new THREE.Mesh(new THREE.BoxGeometry(0.032, 0.075, 0.022), handMat);
+        hand.position.set(dir * 0.29, 0.68, 0.03);
+        handsGroup.add(hand);
+      });
+      registerOrgan('hands', handsGroup);
+
+      // 32. Bones (Femur & Tibia), 33. Joints (Knees), 34. Legs, 35. Feet
+      const bonesGroup = new THREE.Group();
+      const boneMat = makeMat(0xf8fafc, 0.92);
+      [-1, 1].forEach((dir) => {
+        const femur = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.02, 0.36, 14), boneMat);
+        femur.position.set(dir * 0.095, 0.39, 0);
+        bonesGroup.add(femur);
+      });
+      registerOrgan('bones', bonesGroup);
+
+      const jointsGroup = new THREE.Group();
+      const jointMat = makeMat(0x38bdf8, 0.96);
+      [-1, 1].forEach((dir) => {
+        const knee = new THREE.Mesh(new THREE.SphereGeometry(0.034, 16, 16), jointMat);
+        knee.position.set(dir * 0.095, 0.19, 0.015);
+        jointsGroup.add(knee);
+      });
+      registerOrgan('joints', jointsGroup);
+
+      const legsGroup = new THREE.Group();
+      const legMat = makeMat(0xea580c, 0.85);
+      [-1, 1].forEach((dir) => {
+        const calf = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.024, 0.34, 14), legMat);
+        calf.position.set(dir * 0.095, -0.01, -0.01);
+        legsGroup.add(calf);
+      });
+      registerOrgan('legs', legsGroup);
+
+      const feetGroup = new THREE.Group();
+      const footMat = makeMat(0xcbd5e1, 0.92);
+      [-1, 1].forEach((dir) => {
+        const foot = new THREE.Mesh(new THREE.BoxGeometry(0.062, 0.036, 0.13), footMat);
+        foot.position.set(dir * 0.095, -0.19, 0.04);
+        feetGroup.add(foot);
+      });
+      registerOrgan('feet', feetGroup);
+
+      // 36. Skin Sensor Node (Side dermal patch for direct 3D selection)
+      const skinNode = new THREE.Mesh(new THREE.RingGeometry(0.025, 0.042, 24), makeMat(0xfde68a, 0.95));
+      skinNode.position.set(-0.18, 0.95, 0.085);
+      skinNode.rotation.y = -0.6;
+      registerOrgan('skin', skinNode);
+    }
+
+    // Highlight selected organ with glowing emissive effect & optional GSAP camera focus
+    function highlightOrganMesh(organId, zoomToOrgan = true) {
+      selectedOrganId = organId;
+
+      Object.entries(organMeshMap).forEach(([id, obj]) => {
+        const isSelected = id === organId;
+        const organInfo = ORGANS_DATA.find((o) => o.id === id);
+        const matchesSystem = activeSystemId === 'all' || (organInfo && organInfo.system === activeSystemId);
+
+        obj.traverse((child) => {
+          if (child.isMesh && child.material) {
+            if (isSelected) {
+              child.material.emissiveIntensity = 0.95;
+              child.material.opacity = 1;
+            } else if (matchesSystem) {
+              child.material.emissiveIntensity = activeSystemId === 'all' ? 0.28 : 0.62;
+              child.material.opacity = 0.92;
+            } else {
+              child.material.emissiveIntensity = 0.05;
+              child.material.opacity = 0.16;
+            }
+          }
+        });
+      });
+
+      const organ = ORGANS_DATA.find((o) => o.id === organId);
+      if (organ) {
+        const hud = document.getElementById('hud-selected-organ');
+        if (hud) hud.textContent = `${organ.en} • ${organ.si}`;
+
+        if (zoomToOrgan && camera && controls && typeof gsap !== 'undefined') {
+          const [tx, ty, tz] = organ.pos;
+          gsap.to(controls.target, {
+            x: tx,
+            y: ty,
+            z: tz,
+            duration: 0.9,
+            ease: 'power3.out',
+          });
+          gsap.to(camera.position, {
+            x: tx * 1.4,
+            y: ty + 0.12,
+            z: tz + 1.45,
+            duration: 1.0,
+            ease: 'power3.out',
+          });
+        }
+      }
+    }
+
+    // Filter 3D model by physiological body system
+    function selectBodySystem(systemId) {
+      activeSystemId = systemId;
+      const sys = BODY_SYSTEMS.find((s) => s.id === systemId);
+      const badge = document.getElementById('active-system-badge');
+      if (badge && sys) badge.textContent = currentLang === 'si' ? sys.si : sys.en;
+
+      renderSystemSelector();
+
+      // Find first organ belonging to that system and focus it
+      if (systemId !== 'all') {
+        const firstOrgan = ORGANS_DATA.find((o) => o.system === systemId);
+        if (firstOrgan) {
+          selectOrgan(firstOrgan.id, true);
+          return;
+        }
+      }
+      highlightOrganMesh(selectedOrganId, false);
+    }
+
+    function setBodyGender(gender) {
+      currentGender = gender;
+      const mBtn = document.getElementById('gender-male-btn');
+      const fBtn = document.getElementById('gender-female-btn');
+      if (gender === 'male') {
+        mBtn.className = 'py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 bg-cyan-500 text-slate-950 transition-all';
+        fBtn.className = 'py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 text-slate-300 hover:text-white transition-all';
+      } else {
+        fBtn.className = 'py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 bg-cyan-500 text-slate-950 transition-all';
+        mBtn.className = 'py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 text-slate-300 hover:text-white transition-all';
+      }
+      buildTranslucentBodyShell(gender);
+    }
+
+    function setCameraView(view) {
+      if (!camera || !controls) return;
+      const positions = {
+        front: [0, 1.02, 3.15],
+        back: [0, 1.02, -3.15],
+        left: [3.15, 1.02, 0],
+        right: [-3.15, 1.02, 0],
+      };
+      const pos = positions[view] || positions.front;
+      gsap.to(controls.target, { x: 0, y: 0.92, z: 0, duration: 0.85, ease: 'power3.out' });
+      gsap.to(camera.position, { x: pos[0], y: pos[1], z: pos[2], duration: 0.9, ease: 'power3.out' });
+    }
+
+    function resetCameraView() {
+      activeSystemId = 'all';
+      renderSystemSelector();
+      highlightOrganMesh(selectedOrganId, false);
+      setCameraView('front');
+    }
+
+    function zoomCamera(delta) {
+      if (!camera || !controls) return;
+      const dir = new THREE.Vector3().subVectors(camera.position, controls.target).normalize();
+      const dist = camera.position.distanceTo(controls.target);
+      const nextDist = THREE.MathUtils.clamp(dist + delta, 0.95, 5.0);
+      const nextPos = new THREE.Vector3().copy(controls.target).addScaledVector(dir, nextDist);
+      gsap.to(camera.position, { x: nextPos.x, y: nextPos.y, z: nextPos.z, duration: 0.45, ease: 'power2.out' });
+    }
+
+    function toggleAutoRotate() {
+      autoRotateEnabled = !autoRotateEnabled;
+      if (controls) controls.autoRotate = autoRotateEnabled;
+      const btn = document.getElementById('auto-rotate-btn');
+      if (btn) {
+        btn.classList.toggle('bg-cyan-500', autoRotateEnabled);
+        btn.classList.toggle('text-slate-950', autoRotateEnabled);
+      }
+    }
+
+    function onCanvasPointerMove(event) {
+      const rect = renderer.domElement.getBoundingClientRect();
+      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(selectableMeshes, false);
+      const tooltip = document.getElementById('organ-hover-tooltip');
+
+      if (intersects.length > 0) {
+        const hitId = intersects[0].object.userData.organId;
+        hoveredOrganId = hitId;
+        renderer.domElement.style.cursor = 'pointer';
+        const organ = ORGANS_DATA.find((o) => o.id === hitId);
+        if (organ && tooltip) {
+          tooltip.classList.remove('hidden');
+          tooltip.style.left = `${Math.min(event.clientX - rect.left + 14, rect.width - 170)}px`;
+          tooltip.style.top = `${Math.max(event.clientY - rect.top - 16, 12)}px`;
+          document.getElementById('tooltip-title').textContent = currentLang === 'si' ? organ.si : organ.en;
+          document.getElementById('tooltip-sub').textContent = currentLang === 'si' ? organ.en : organ.si;
+        }
+      } else {
+        hoveredOrganId = null;
+        renderer.domElement.style.cursor = 'grab';
+        if (tooltip) tooltip.classList.add('hidden');
+      }
+    }
+
+    function onCanvasClick() {
+      if (hoveredOrganId) {
+        selectOrgan(hoveredOrganId, true);
+      }
+    }
+
+    function onWindowResize() {
+      const container = document.getElementById('three-mount');
+      if (!container || !renderer || !camera) return;
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    }
+
+    function animate3D() {
+      requestAnimationFrame(animate3D);
+      const elapsed = clock.getElapsedTime();
+
+      // Realistic Heartbeat & Breathing Subtle Motion
+      if (organMeshMap.heart) {
+        const beat = 1 + Math.sin(elapsed * 7.5) * 0.055;
+        organMeshMap.heart.scale.set(beat, beat, beat);
+      }
+      if (organMeshMap.lungs) {
+        const breath = 1 + Math.sin(elapsed * 2.2) * 0.035;
+        organMeshMap.lungs.scale.set(breath, 1 + Math.sin(elapsed * 2.2) * 0.02, breath);
+      }
+
+      if (controls) controls.update();
+      if (renderer && scene && camera) renderer.render(scene, camera);
+    }
+
+    /* ==========================================================================
+       MODULE 5: UI RENDERING, BILINGUAL SWITCHING, SEARCH, QUIZ & ANIMATIONS
+       ========================================================================== */
+    let activeCategoryFilter = 'All';
+    let bookmarkedIds = JSON.parse(localStorage.getItem('vmb_bookmarks') || '["heart","brain"]');
+    let currentQuizIdx = 0;
+    let quizScore = 0;
+    let quizAnswered = false;
+    let currentFactIdx = 0;
+
+    // Master Organ Selection Handler
+    function selectOrgan(organId, scrollAndZoom = true) {
+      const organ = ORGANS_DATA.find((o) => o.id === organId);
+      if (!organ) return;
+
+      highlightOrganMesh(organId, scrollAndZoom);
+      renderOrganDetailPanel(organ);
+
+      if (scrollAndZoom) {
+        const sec = document.getElementById('explorer-3d');
+        if (sec && Math.abs(sec.getBoundingClientRect().top) > 320) {
+          sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
+    }
+
+    // Renders all 10 required fields in the Organ Information Panel
+    function renderOrganDetailPanel(organ) {
+      const panel = document.getElementById('organ-detail-panel');
+      if (!panel) return;
+
+      const isBookmarked = bookmarkedIds.includes(organ.id);
+      const displayTitle =
+        currentLang === 'en' ? organ.en : currentLang === 'si' ? organ.si : `${organ.en} | ${organ.si}`;
+
+      panel.innerHTML = `
+        <div class="flex items-start justify-between gap-3 border-b border-cyan-500/20 pb-3.5">
+          <div>
+            <span class="text-[10px] font-display uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-cyan-500/15 text-cyan-400">
+              ${organ.category}
+            </span>
+            <h3 class="font-display text-xl sm:text-2xl font-bold mt-2 leading-snug">${displayTitle}</h3>
+            <div class="text-xs text-slate-400 mt-1 flex flex-wrap gap-3">
+              <span><strong class="text-cyan-400">English:</strong> ${organ.en}</span>
+              <span><strong class="text-purple-400">සිංහල:</strong> ${organ.si}</span>
+            </div>
+          </div>
+          <button onclick="toggleBookmark('${organ.id}')" class="p-2.5 rounded-xl glass-card border-cyan-400/40 ${isBookmarked ? 'text-amber-400 bg-amber-400/10' : 'text-slate-400 hover:text-cyan-400'}" title="Bookmark Organ">
+            <i data-lucide="bookmark" class="w-4 h-4 ${isBookmarked ? 'fill-amber-400' : ''}"></i>
+          </button>
+        </div>
+
+        <div class="space-y-3 text-xs sm:text-sm">
+          <div class="p-3 rounded-xl bg-slate-900/50 border border-cyan-500/15">
+            <div class="font-display text-[11px] uppercase tracking-wider text-cyan-400 mb-1 flex items-center gap-1.5">
+              <i data-lucide="map-pin" class="w-3.5 h-3.5"></i> 4. ${t('f_location')}
+            </div>
+            <p class="text-slate-200 leading-relaxed">${biText(organ.location)}</p>
+          </div>
+
+          <div class="p-3 rounded-xl bg-slate-900/50 border border-cyan-500/15">
+            <div class="font-display text-[11px] uppercase tracking-wider text-blue-400 mb-1 flex items-center gap-1.5">
+              <i data-lucide="cpu" class="w-3.5 h-3.5"></i> 5. ${t('f_functions')}
+            </div>
+            <p class="text-slate-200 leading-relaxed">${biText(organ.functions)}</p>
+          </div>
+
+          <div class="p-3 rounded-xl bg-slate-900/50 border border-cyan-500/15">
+            <div class="font-display text-[11px] uppercase tracking-wider text-purple-400 mb-1 flex items-center gap-1.5">
+              <i data-lucide="activity" class="w-3.5 h-3.5"></i> 6. ${t('f_how')}
+            </div>
+            <p class="text-slate-200 leading-relaxed">${biText(organ.howItWorks)}</p>
+          </div>
+
+          <div class="p-3 rounded-xl bg-cyan-500/10 border border-cyan-400/25">
+            <div class="font-display text-[11px] uppercase tracking-wider text-cyan-300 mb-1 flex items-center gap-1.5">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> 7. ${t('f_facts')}
+            </div>
+            <p class="text-slate-100 leading-relaxed">${biText(organ.facts)}</p>
+          </div>
+
+          <div class="p-3 rounded-xl bg-amber-500/10 border border-amber-400/25">
+            <div class="font-display text-[11px] uppercase tracking-wider text-amber-300 mb-1 flex items-center gap-1.5">
+              <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i> 8. ${t('f_symptoms')}
+            </div>
+            <p class="text-slate-200 leading-relaxed">${biText(organ.symptoms)}</p>
+          </div>
+
+          <div class="p-3 rounded-xl bg-rose-500/10 border border-rose-400/25">
+            <div class="font-display text-[11px] uppercase tracking-wider text-rose-300 mb-1 flex items-center gap-1.5">
+              <i data-lucide="stethoscope" class="w-3.5 h-3.5"></i> 9. ${t('f_diseases')}
+            </div>
+            <p class="text-slate-200 leading-relaxed">${biText(organ.diseases)}</p>
+          </div>
+
+          <div class="p-3 rounded-xl bg-emerald-500/10 border border-emerald-400/25">
+            <div class="font-display text-[11px] uppercase tracking-wider text-emerald-300 mb-1 flex items-center gap-1.5">
+              <i data-lucide="heart-handshake" class="w-3.5 h-3.5"></i> 10. ${t('f_prevention')}
+            </div>
+            <p class="text-slate-200 leading-relaxed">${biText(organ.prevention)}</p>
+          </div>
+        </div>
+      `;
+
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+      if (typeof gsap !== 'undefined') {
+        gsap.fromTo(panel, { opacity: 0.65, y: 8 }, { opacity: 1, y: 0, duration: 0.35, ease: 'power2.out' });
+      }
+    }
+
+    // Render 3D Body Systems Selector List
+    function renderSystemSelector() {
+      const container = document.getElementById('system-selector-list');
+      if (!container) return;
+
+      container.innerHTML = BODY_SYSTEMS.map((sys) => {
+        const isActive = sys.id === activeSystemId;
+        const label = currentLang === 'en' ? sys.en : currentLang === 'si' ? sys.si : `${sys.en} • ${sys.si}`;
+        return `
+          <button onclick="selectBodySystem('${sys.id}')"
+            class="w-full text-left px-3 py-2.5 rounded-xl text-xs font-medium flex items-center justify-between gap-2 transition-all ${
+              isActive
+                ? 'bg-gradient-to-r from-cyan-500/25 to-purple-500/25 border border-cyan-400 text-white shadow-sm'
+                : 'hover:bg-slate-800/60 text-slate-300 border border-transparent'
+            }">
+            <span class="flex items-center gap-2 truncate">
+              <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background:${sys.color}; box-shadow: 0 0 8px ${sys.color};"></span>
+              <span class="truncate">${label}</span>
+            </span>
+            <i data-lucide="${sys.icon}" class="w-3.5 h-3.5 shrink-0 opacity-75"></i>
+          </button>
+        `;
+      }).join('');
+
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    // Render Body Parts Library Grid + Category Filter Tabs
+    function renderBodyPartsLibrary() {
+      const categories = ['All', 'Head & Brain', 'Chest & Upper Body', 'Digestive System', 'Urinary System', 'Musculoskeletal System', 'Other Body Systems'];
+      const tabsEl = document.getElementById('category-filter-tabs');
+      if (tabsEl) {
+        tabsEl.innerHTML = categories.map((cat) => {
+          const active = cat === activeCategoryFilter;
+          return `
+            <button onclick="filterBodyParts('${cat}')" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+              active ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/25' : 'glass-card text-slate-300 hover:border-cyan-400'
+            }">
+              ${cat}
+            </button>
+          `;
+        }).join('');
+      }
+
+      const gridEl = document.getElementById('body-parts-grid');
+      if (!gridEl) return;
+
+      const filtered = activeCategoryFilter === 'All'
+        ? ORGANS_DATA
+        : ORGANS_DATA.filter((o) => o.category === activeCategoryFilter);
+
+      gridEl.innerHTML = filtered.map((organ) => {
+        const isBookmarked = bookmarkedIds.includes(organ.id);
+        return `
+          <div class="glass-card rounded-2xl p-4 flex flex-col justify-between gap-3 group">
+            <div>
+              <div class="flex items-center justify-between gap-2 mb-2">
+                <span class="text-[10px] font-display uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-800/80 text-cyan-300">
+                  ${organ.category}
+                </span>
+                <button onclick="toggleBookmark('${organ.id}')" class="text-slate-400 hover:text-amber-400 transition-colors" title="Bookmark">
+                  <i data-lucide="bookmark" class="w-4 h-4 ${isBookmarked ? 'text-amber-400 fill-amber-400' : ''}"></i>
+                </button>
+              </div>
+              <h3 class="font-display text-base font-bold group-hover:text-cyan-400 transition-colors">
+                ${currentLang === 'si' ? organ.si : organ.en}
+              </h3>
+              <div class="text-xs text-purple-300 font-medium mb-2">
+                ${currentLang === 'si' ? organ.en : organ.si}
+              </div>
+              <p class="text-xs text-slate-400 line-clamp-2 leading-relaxed">
+                ${biText(organ.functions)}
+              </p>
+            </div>
+            <button onclick="selectOrgan('${organ.id}', true)" class="btn-glow w-full py-2 px-3 rounded-xl bg-cyan-500/15 hover:bg-cyan-500 hover:text-slate-950 border border-cyan-400/40 text-cyan-300 text-xs font-display font-bold uppercase tracking-wider flex items-center justify-center gap-1.5">
+              <i data-lucide="box" class="w-3.5 h-3.5"></i>
+              <span>${t('view_in_3d')}</span>
+            </button>
+          </div>
+        `;
+      }).join('');
+
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function filterBodyParts(cat) {
+      activeCategoryFilter = cat;
+      renderBodyPartsLibrary();
+    }
+
+    // Render 11 Body Systems Showcase Cards
+    function renderSystemsShowcase() {
+      const grid = document.getElementById('systems-showcase-grid');
+      if (!grid) return;
+
+      grid.innerHTML = BODY_SYSTEMS.filter((s) => s.id !== 'all').map((sys) => {
+        const title = currentLang === 'en' ? sys.en : currentLang === 'si' ? sys.si : `${sys.en} • ${sys.si}`;
+        const desc = currentLang === 'si' ? sys.descSi : currentLang === 'en' ? sys.descEn : `${sys.descEn} — ${sys.descSi}`;
+        return `
+          <div onclick="activateSystemAndScroll('${sys.id}')" class="glass-card rounded-2xl p-5 cursor-pointer group">
+            <div class="flex items-center justify-between mb-3">
+              <div class="w-11 h-11 rounded-xl flex items-center justify-center" style="background: ${sys.color}20; border: 1px solid ${sys.color}55;">
+                <i data-lucide="${sys.icon}" class="w-5 h-5" style="color: ${sys.color};"></i>
+              </div>
+              <span class="text-xs font-display text-cyan-400 group-hover:translate-x-1 transition-transform flex items-center gap-1">
+                3D <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+              </span>
+            </div>
+            <h3 class="font-display text-lg font-bold mb-1.5 group-hover:text-cyan-400 transition-colors">${title}</h3>
+            <p class="text-xs sm:text-sm text-slate-400 leading-relaxed">${desc}</p>
+          </div>
+        `;
+      }).join('');
+
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function activateSystemAndScroll(sysId) {
+      selectBodySystem(sysId);
+      document.getElementById('explorer-3d')?.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Render Symptoms & Diseases Cards
+    function renderDiseasesSection() {
+      const grid = document.getElementById('diseases-grid');
+      if (!grid) return;
+
+      grid.innerHTML = DISEASES_DATA.map((d) => {
+        const title = currentLang === 'en' ? d.en : currentLang === 'si' ? d.si : `${d.en} — ${d.si}`;
+        const affected = currentLang === 'si' ? d.affectedSi : d.affectedEn;
+        const symptoms = currentLang === 'si' ? d.symptomsSi : currentLang === 'en' ? d.symptomsEn : `${d.symptomsEn} / ${d.symptomsSi}`;
+        const causes = currentLang === 'si' ? d.causesSi : d.causesEn;
+        const risk = currentLang === 'si' ? d.riskSi : d.riskEn;
+        const prev = currentLang === 'si' ? d.preventionSi : d.preventionEn;
+        const urgent = currentLang === 'si' ? d.urgentSi : d.urgentEn;
+
+        return `
+          <div class="glass-card rounded-2xl p-5 flex flex-col justify-between gap-4 border-rose-500/20">
+            <div class="space-y-3">
+              <div class="flex items-start justify-between gap-2">
+                <h3 class="font-display text-base sm:text-lg font-bold text-rose-300 leading-snug">${title}</h3>
+              </div>
+
+              <button onclick="selectOrgan('${d.organId}', true)" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/15 border border-cyan-400/35 text-xs font-semibold text-cyan-300 hover:bg-cyan-500 hover:text-slate-950 transition-all">
+                <i data-lucide="crosshair" class="w-3.5 h-3.5"></i>
+                <span>${affected}</span>
+              </button>
+
+              <div class="space-y-2 text-xs leading-relaxed text-slate-300">
+                <div><strong class="text-amber-300">Symptoms:</strong> ${symptoms}</div>
+                <div><strong class="text-purple-300">Causes:</strong> ${causes}</div>
+                <div><strong class="text-blue-300">Risk Factors:</strong> ${risk}</div>
+                <div><strong class="text-emerald-300">Prevention:</strong> ${prev}</div>
+              </div>
+            </div>
+
+            <div class="p-3 rounded-xl bg-rose-500/10 border border-rose-400/30 text-[11px] text-rose-200 leading-relaxed">
+              <strong class="uppercase font-display tracking-wider block text-rose-300 mb-0.5">When to Seek Medical Help:</strong>
+              ${urgent}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    // Render Facts & Fact of the Day
+    function renderFactsSection() {
+      const fact = BODY_FACTS[currentFactIdx % BODY_FACTS.length];
+      const text = biText(fact);
+
+      const heroTicker = document.getElementById('hero-fact-ticker');
+      if (heroTicker) heroTicker.textContent = text;
+
+      const fotdCard = document.getElementById('fact-of-day-card');
+      if (fotdCard) {
+        fotdCard.innerHTML = `
+          <div class="flex items-start gap-4">
+            <div class="w-12 h-12 rounded-2xl bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center shrink-0">
+              <i data-lucide="lightbulb" class="w-6 h-6 text-cyan-400"></i>
+            </div>
+            <div>
+              <span class="text-[11px] font-display uppercase tracking-widest text-cyan-400">Anatomy Fact of the Day</span>
+              <p class="text-base sm:text-lg font-medium mt-1 leading-relaxed">${text}</p>
+            </div>
+          </div>
+        `;
+      }
+
+      const factsGrid = document.getElementById('facts-grid');
+      if (factsGrid) {
+        factsGrid.innerHTML = BODY_FACTS.slice(0, 4).map((f, idx) => `
+          <div class="glass-card rounded-2xl p-4 space-y-2">
+            <span class="font-display text-xs font-bold text-purple-400">BIO-FACT #0${idx + 1}</span>
+            <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">${biText(f)}</p>
+          </div>
+        `).join('');
+      }
+
+      const whyList = document.getElementById('why-learn-list');
+      if (whyList) {
+        whyList.innerHTML = WHY_LEARN_ITEMS.map((item) => `
+          <li class="flex items-start gap-2.5">
+            <i data-lucide="check-circle-2" class="w-4 h-4 text-cyan-400 shrink-0 mt-1"></i>
+            <span class="leading-relaxed">${biText(item)}</span>
+          </li>
+        `).join('');
+      }
+
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function rotateFactOfDay() {
+      currentFactIdx = (currentFactIdx + 1) % BODY_FACTS.length;
+      renderFactsSection();
+    }
+
+    // Interactive Quiz Renderer
+    function renderQuiz() {
+      const container = document.getElementById('quiz-container');
+      const scoreEl = document.getElementById('quiz-score-display');
+      const progEl = document.getElementById('quiz-progress-bar');
+      if (!container) return;
+
+      scoreEl.textContent = `${quizScore} / ${QUIZ_QUESTIONS.length}`;
+      progEl.style.width = `${((currentQuizIdx + 1) / QUIZ_QUESTIONS.length) * 100}%`;
+
+      if (currentQuizIdx >= QUIZ_QUESTIONS.length) {
+        progEl.style.width = '100%';
+        container.innerHTML = `
+          <div class="text-center py-8 space-y-4">
+            <div class="w-16 h-16 rounded-2xl bg-cyan-500/20 border border-cyan-400 flex items-center justify-center mx-auto">
+              <i data-lucide="trophy" class="w-8 h-8 text-cyan-400"></i>
+            </div>
+            <h4 class="font-display text-2xl font-bold">Quiz Completed!</h4>
+            <p class="text-slate-300">You scored <strong class="text-cyan-400 text-xl">${quizScore} / ${QUIZ_QUESTIONS.length}</strong> in the VIEW MY BODY Anatomy Challenge.</p>
+            <button onclick="restartQuiz()" class="btn-glow px-6 py-3 rounded-xl bg-cyan-500 text-slate-950 font-display font-bold text-xs uppercase tracking-wider">
+              Restart Quiz
+            </button>
+          </div>
+        `;
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+        return;
+      }
+
+      const q = QUIZ_QUESTIONS[currentQuizIdx];
+      const questionText = currentLang === 'si' ? q.qSi : currentLang === 'en' ? q.qEn : `${q.qEn} / ${q.qSi}`;
+      const options = currentLang === 'si' ? q.optsSi : q.optsEn;
+
+      container.innerHTML = `
+        <div class="text-xs font-display text-purple-400 uppercase tracking-wider">
+          Question ${currentQuizIdx + 1} of ${QUIZ_QUESTIONS.length}
+        </div>
+        <h4 class="text-base sm:text-lg font-semibold leading-relaxed">${questionText}</h4>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          ${options.map((opt, idx) => `
+            <button onclick="submitQuizAnswer(${idx})" id="quiz-opt-${idx}"
+              class="quiz-opt-btn text-left p-3.5 rounded-xl glass-card border-cyan-500/25 hover:border-cyan-400 text-sm font-medium transition-all">
+              <span class="font-display text-cyan-400 mr-2">${String.fromCharCode(65 + idx)}.</span> ${opt}
+            </button>
+          `).join('')}
+        </div>
+        <div id="quiz-feedback" class="hidden p-4 rounded-xl bg-cyan-500/10 border border-cyan-400/30 text-xs sm:text-sm space-y-3"></div>
+      `;
+    }
+
+    function submitQuizAnswer(selectedIdx) {
+      if (quizAnswered) return;
+      quizAnswered = true;
+      const q = QUIZ_QUESTIONS[currentQuizIdx];
+      const isCorrect = selectedIdx === q.ans;
+      if (isCorrect) quizScore++;
+
+      document.getElementById('quiz-score-display').textContent = `${quizScore} / ${QUIZ_QUESTIONS.length}`;
+
+      document.querySelectorAll('.quiz-opt-btn').forEach((btn, idx) => {
+        btn.disabled = true;
+        if (idx === q.ans) {
+          btn.classList.add('border-emerald-400', 'bg-emerald-500/20', 'text-emerald-200');
+        } else if (idx === selectedIdx && !isCorrect) {
+          btn.classList.add('border-rose-400', 'bg-rose-500/20', 'text-rose-200');
+        }
+      });
+
+      const fb = document.getElementById('quiz-feedback');
+      fb.classList.remove('hidden');
+      fb.innerHTML = `
+        <div class="font-bold ${isCorrect ? 'text-emerald-400' : 'text-rose-400'}">
+          ${isCorrect ? '✓ Correct!' : '✕ Not quite right'}
+        </div>
+        <p class="text-slate-200">${currentLang === 'si' ? q.expSi : q.expEn}</p>
+        <button onclick="nextQuizQuestion()" class="px-4 py-2 rounded-lg bg-cyan-500 text-slate-950 font-display font-bold text-xs uppercase">
+          ${currentQuizIdx + 1 < QUIZ_QUESTIONS.length ? 'Next Question →' : 'See Final Score'}
+        </button>
+      `;
+    }
+
+    function nextQuizQuestion() {
+      currentQuizIdx++;
+      quizAnswered = false;
+      renderQuiz();
+    }
+
+    function restartQuiz() {
+      currentQuizIdx = 0;
+      quizScore = 0;
+      quizAnswered = false;
+      renderQuiz();
+    }
+
+    // Bookmarks Management
+    function toggleBookmark(organId) {
+      if (bookmarkedIds.includes(organId)) {
+        bookmarkedIds = bookmarkedIds.filter((id) => id !== organId);
+      } else {
+        bookmarkedIds.push(organId);
+      }
+      localStorage.setItem('vmb_bookmarks', JSON.stringify(bookmarkedIds));
+      updateBookmarkBadge();
+      renderBodyPartsLibrary();
+      const currentOrgan = ORGANS_DATA.find((o) => o.id === selectedOrganId);
+      if (currentOrgan) renderOrganDetailPanel(currentOrgan);
+      renderBookmarksModal();
+    }
+
+    function updateBookmarkBadge() {
+      const badge = document.getElementById('bookmark-count-badge');
+      if (badge) badge.textContent = bookmarkedIds.length;
+    }
+
+    function renderBookmarksModal() {
+      const list = document.getElementById('bookmarks-list');
+      if (!list) return;
+      if (bookmarkedIds.length === 0) {
+        list.innerHTML = `<p class="text-sm text-slate-400 text-center py-6">No body parts bookmarked yet. Click the bookmark icon on any organ to save it here.</p>`;
+        return;
+      }
+      list.innerHTML = bookmarkedIds.map((id) => {
+        const o = ORGANS_DATA.find((item) => item.id === id);
+        if (!o) return '';
+        return `
+          <div class="flex items-center justify-between p-3 rounded-xl bg-slate-900/60 border border-cyan-500/20">
+            <div>
+              <div class="font-bold text-sm text-cyan-300">${o.en} • ${o.si}</div>
+              <div class="text-xs text-slate-400">${o.category}</div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="document.getElementById('bookmarks-modal').classList.add('hidden'); selectOrgan('${o.id}', true);" class="px-3 py-1.5 rounded-lg bg-cyan-500 text-slate-950 text-xs font-bold">
+                View 3D
+              </button>
+              <button onclick="toggleBookmark('${o.id}')" class="p-1.5 text-rose-400 hover:bg-rose-500/15 rounded-lg">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    // Real-Time Bilingual Search Bar
+    function setupBilingualSearch() {
+      const input = document.getElementById('global-search-input');
+      const dropdown = document.getElementById('search-results-dropdown');
+      const clearBtn = document.getElementById('clear-search-btn');
+      if (!input || !dropdown) return;
+
+      input.addEventListener('input', () => {
+        const query = input.value.trim().toLowerCase();
+        clearBtn.classList.toggle('hidden', query.length === 0);
+
+        if (!query) {
+          dropdown.classList.add('hidden');
+          return;
+        }
+
+        const matches = ORGANS_DATA.filter((o) =>
+          o.en.toLowerCase().includes(query) ||
+          o.si.includes(query) ||
+          o.category.toLowerCase().includes(query) ||
+          o.functions.en.toLowerCase().includes(query)
+        );
+
+        dropdown.classList.remove('hidden');
+        if (matches.length === 0) {
+          dropdown.innerHTML = `<div class="p-4 text-xs text-slate-400">No matching body parts found for "${input.value}".</div>`;
+          return;
+        }
+
+        dropdown.innerHTML = matches.slice(0, 8).map((m) => `
+          <button onclick="handleSearchSelect('${m.id}')" class="w-full text-left px-4 py-3 hover:bg-cyan-500/15 flex items-center justify-between gap-2 transition-colors">
+            <div>
+              <div class="text-sm font-bold text-cyan-300">${m.en} <span class="text-purple-300 font-sinhala ml-1">(${m.si})</span></div>
+              <div class="text-[11px] text-slate-400">${m.category}</div>
+            </div>
+            <span class="text-[10px] font-display uppercase px-2 py-1 rounded bg-cyan-500/20 text-cyan-300">3D View</span>
+          </button>
+        `).join('');
+      });
+
+      clearBtn.addEventListener('click', () => {
+        input.value = '';
+        clearBtn.classList.add('hidden');
+        dropdown.classList.add('hidden');
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+          dropdown.classList.add('hidden');
+        }
+      });
+    }
+
+    function handleSearchSelect(organId) {
+      document.getElementById('search-results-dropdown')?.classList.add('hidden');
+      selectOrgan(organId, true);
+    }
+
+    // Instant Bilingual Switcher (English / සිංහල / Bilingual)
+    function setLanguage(lang) {
+      currentLang = lang;
+
+      document.querySelectorAll('.lang-btn').forEach((btn) => {
+        const active = btn.dataset.langBtn === lang;
+        btn.className = active
+          ? 'lang-btn px-2 py-1.5 rounded-lg transition-all bg-cyan-500 text-slate-950'
+          : 'lang-btn px-2 py-1.5 rounded-lg transition-all text-slate-300 hover:text-white';
+      });
+
+      // Update static data-i18n labels
+      document.querySelectorAll('[data-i18n]').forEach((el) => {
+        const key = el.getAttribute('data-i18n');
+        el.textContent = t(key);
+      });
+
+      // Re-render dynamic panels immediately
+      renderSystemSelector();
+      const activeOrgan = ORGANS_DATA.find((o) => o.id === selectedOrganId) || ORGANS_DATA[0];
+      renderOrganDetailPanel(activeOrgan);
+      renderBodyPartsLibrary();
+      renderSystemsShowcase();
+      renderDiseasesSection();
+      renderFactsSection();
+      renderQuiz();
+      highlightOrganMesh(selectedOrganId, false);
+    }
+
+    // Background Particle Canvas Animation
+    function initParticleBackground() {
+      const canvas = document.getElementById('particle-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      let w = (canvas.width = window.innerWidth);
+      let h = (canvas.height = window.innerHeight);
+
+      const particles = Array.from({ length: 42 }, () => ({
+        x: Math.random() * w,
+        y: Math.random() * h,
+        r: Math.random() * 2 + 0.6,
+        vx: (Math.random() - 0.5) * 0.35,
+        vy: (Math.random() - 0.5) * 0.35,
+      }));
+
+      window.addEventListener('resize', () => {
+        w = canvas.width = window.innerWidth;
+        h = canvas.height = window.innerHeight;
+      });
+
+      function draw() {
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = 'rgba(0, 240, 255, 0.55)';
+        particles.forEach((p) => {
+          p.x += p.vx;
+          p.y += p.vy;
+          if (p.x < 0) p.x = w;
+          if (p.x > w) p.x = 0;
+          if (p.y < 0) p.y = h;
+          if (p.y > h) p.y = 0;
+
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        requestAnimationFrame(draw);
+      }
+      draw();
+    }
+
+    // Boot Application
+    window.addEventListener('DOMContentLoaded', () => {
+      // Animate Loading Bar
+      const loaderBar = document.getElementById('loader-bar');
+      if (loaderBar) loaderBar.style.width = '100%';
+
+      // Initialize UI & Data
+      renderSystemSelector();
+      renderOrganDetailPanel(ORGANS_DATA.find((o) => o.id === 'heart'));
+      renderBodyPartsLibrary();
+      renderSystemsShowcase();
+      renderDiseasesSection();
+      renderFactsSection();
+      renderQuiz();
+      updateBookmarkBadge();
+      setupBilingualSearch();
+      initParticleBackground();
+
+      // Shell Opacity Slider Listener
+      const opacitySlider = document.getElementById('shell-opacity-slider');
+      if (opacitySlider) {
+        opacitySlider.addEventListener('input', (e) => {
+          document.getElementById('shell-opacity-val').textContent = `${e.target.value}%`;
+          buildTranslucentBodyShell(currentGender);
+        });
+      }
+
+      // Theme Toggle (Dark / Light)
+      const themeBtn = document.getElementById('theme-toggle-btn');
+      themeBtn?.addEventListener('click', () => {
+        const isLight = document.documentElement.classList.toggle('light-theme');
+        document.getElementById('theme-icon-sun').classList.toggle('hidden', !isLight);
+        document.getElementById('theme-icon-moon').classList.toggle('hidden', isLight);
+      });
+
+      // Bookmarks Modal Listeners
+      document.getElementById('open-bookmarks-btn')?.addEventListener('click', () => {
+        renderBookmarksModal();
+        document.getElementById('bookmarks-modal')?.classList.remove('hidden');
+      });
+      document.getElementById('close-bookmarks-btn')?.addEventListener('click', () => {
+        document.getElementById('bookmarks-modal')?.classList.add('hidden');
+      });
+
+      // Back to Top Scroll Visibility
+      const bttBtn = document.getElementById('back-to-top-btn');
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 450) {
+          bttBtn?.classList.remove('opacity-0', 'pointer-events-none');
+        } else {
+          bttBtn?.classList.add('opacity-0', 'pointer-events-none');
+        }
+      });
+
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    });
+
+    window.addEventListener('load', () => {
+      initThreeEngine();
+
+      // Dismiss Loading Screen & Run GSAP Entrance
+      setTimeout(() => {
+        const loader = document.getElementById('loading-screen');
+        if (loader) {
+          loader.style.opacity = '0';
+          loader.style.visibility = 'hidden';
+        }
+        if (typeof gsap !== 'undefined') {
+          gsap.from('.hero-animate', {
+            y: 26,
+            opacity: 0,
+            duration: 0.85,
+            stagger: 0.15,
+            ease: 'power3.out',
+          });
+        }
+      }, 450);
+    });
+  </script>
+</body>
+</html>
